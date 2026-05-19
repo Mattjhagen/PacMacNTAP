@@ -77,7 +77,7 @@ export default function ComingSoonSection() {
           <motion.div variants={itemVariants} className="flex items-center justify-center gap-3">
             <div className="h-[1px] w-8 bg-brand-gray-800" />
             <span className="font-mono text-xs text-brand-gray-500 uppercase tracking-widest">
-              01 // DEFENSE MATRIX
+              01 // COMING SOON
             </span>
             <div className="h-[1px] w-8 bg-brand-gray-800" />
           </motion.div>
@@ -87,7 +87,7 @@ export default function ComingSoonSection() {
             variants={itemVariants}
             className="font-display text-4xl sm:text-6xl font-medium tracking-tight text-white leading-none"
           >
-            Launching Soon
+            Something smarter is coming.
           </motion.h2>
 
           {/* Core concept paragraph */}
@@ -95,7 +95,7 @@ export default function ComingSoonSection() {
             variants={itemVariants}
             className="text-base md:text-lg text-brand-gray-450 font-sans font-light leading-relaxed max-w-2xl mx-auto"
           >
-            We’re building a smarter layer between you and the people trying to manipulate, scam, and exploit your attention. PackieAI provides absolute, high-fidelity call protection without latency.
+            We’re building a better way to deal with spam calls, robocalls, and scammers — without making your phone experience complicated.
           </motion.p>
 
           {/* Countdown Clock Panel */}
@@ -121,7 +121,7 @@ export default function ComingSoonSection() {
                 {String(timeLeft.hours).padStart(2, '0')}
               </span>
               <span className="block font-mono text-[9px] uppercase tracking-widest text-brand-gray-400 mt-2">
-                Hours Left
+                Hours
               </span>
             </div>
 
@@ -132,7 +132,7 @@ export default function ComingSoonSection() {
                 {String(timeLeft.minutes).padStart(2, '0')}
               </span>
               <span className="block font-mono text-[9px] uppercase tracking-widest text-brand-gray-400 mt-2">
-                Minutes Core
+                Minutes
               </span>
             </div>
 
@@ -143,7 +143,7 @@ export default function ComingSoonSection() {
                 {String(timeLeft.seconds).padStart(2, '0')}
               </span>
               <span className="block font-mono text-[9px] uppercase tracking-widest text-brand-gray-400 mt-2">
-                Seconds Sync
+                Seconds
               </span>
             </div>
           </motion.div>
@@ -155,12 +155,12 @@ export default function ComingSoonSection() {
           >
             <span className="flex items-center gap-2">
               <ShieldCheck className="w-4 h-4 text-white/40" />
-              FIPS 140-3 SECURITY STANDARD APPROVED
+              INTEGRATED SPAM FILTERS
             </span>
             <span className="hidden md:inline text-white/10">|</span>
             <span className="flex items-center gap-2">
               <Wifi className="w-4 h-4 text-white/40" />
-              SECURE GLOBAL GATEWAYS ACTIVE
+              WORKS DIRECTLY ON YOUR CELL NETWORK
             </span>
           </motion.div>
         </motion.div>

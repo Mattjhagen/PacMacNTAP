@@ -37,15 +37,15 @@ export default function WaitlistSection() {
           <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full border border-white/5 bg-white/[0.02] backdrop-blur-md mb-8">
             <span className="w-1.5 h-1.5 rounded-full bg-white animate-pulse" />
             <span className="text-[10px] uppercase font-mono tracking-widest text-brand-gray-400">
-              EARLY ACCESS GATEWAY
+              EARLY ACCESS
             </span>
           </div>
 
           <h2 className="font-display text-4xl md:text-5xl font-medium tracking-tight text-white mb-4">
-            Secure Your AI Shield
+            Want early access?
           </h2>
           <p className="text-sm md:text-base text-brand-gray-400 font-light max-w-lg leading-relaxed mb-12 font-sans">
-            Secure your spot in our upcoming private beta. Lock in scam-defense priority, preserve your absolute focus, and forever shield your phone line.
+            We’re opening PackieAI to early users soon. Join the list and we’ll let you know when it’s ready.
           </p>
 
           {/* Glassmorphism signup Card */}
@@ -84,7 +84,7 @@ export default function WaitlistSection() {
                       id="emailaddress"
                       type="email"
                       required
-                      placeholder="e.g. lsterling@shield.net"
+                      placeholder="e.g. lsterling@domain.net"
                       value={email}
                       onChange={(e) => setEmail(e.target.value)}
                       className="w-full bg-black border border-white/10 rounded-xl py-3 px-4 text-sm text-white focus:outline-none focus:border-white transition-colors placeholder:text-brand-gray-600"
@@ -100,7 +100,7 @@ export default function WaitlistSection() {
                       <div className="w-5 h-5 border-2 border-black border-t-transparent rounded-full animate-spin" />
                     ) : (
                       <>
-                        <span>Request Early Access</span>
+                        <span>Request Invite</span>
                         <Send className="w-3.5 h-3.5" />
                       </>
                     )}
@@ -108,7 +108,7 @@ export default function WaitlistSection() {
 
                   <div className="flex items-start gap-2.5 text-[10px] font-mono text-brand-gray-500 leading-normal pt-1">
                     <ShieldAlert className="w-4 h-4 flex-shrink-0 text-brand-gray-600 mt-0.5" />
-                    <span>ZERO DATA RETENTION: We encrypt connection credentials instantly. You only receive updates regarding server rollout parameters.</span>
+                    <span>SAFE AND COMPLIANT: We never share or sell your email address. You will only receive updates regarding PackieAI and PacMac Mobile.</span>
                   </div>
                 </motion.form>
               ) : (
@@ -123,15 +123,15 @@ export default function WaitlistSection() {
                     <Check className="w-6 h-6 text-white" />
                   </div>
                   <h4 className="font-display text-2xl font-bold text-white tracking-tight mb-2">
-                    Priority Secured
+                    You’re on the list.
                   </h4>
                   <p className="text-sm text-brand-gray-400 max-w-xs mx-auto leading-relaxed mb-6 font-sans">
-                    Welcome to the shield line, <span className="text-white font-medium">{name}</span>. Your connection registration has bypassed standard holding nodes successfully.
+                    Thanks for signing up, <span className="text-white font-medium">{name}</span>! We’ve reserved your spot and will let you know when it’s ready.
                   </p>
 
                   <div className="bg-white/5 border border-white/10 rounded-xl py-4.5 px-6 inline-block mb-6 relative">
                     <span className="font-mono text-[9px] text-brand-gray-500 block uppercase tracking-wider">
-                      Your Queue Node
+                      Your Waitlist Spot
                     </span>
                     <span className="font-display text-2xl font-bold text-white tracking-tight block mt-0.5">
                       #{waitlistNumber}
@@ -139,7 +139,7 @@ export default function WaitlistSection() {
                   </div>
 
                   <p className="text-[11px] font-mono text-brand-gray-500 max-w-xs mx-auto">
-                    We will dispatch credentials to <span className="text-brand-gray-300">{email}</span> once wave screening begins in your area. Let's make connection safe.
+                    We will send updates directly to <span className="text-brand-gray-300">{email}</span> as we launch. Let's block the spam together.
                   </p>
                 </motion.div>
               )}

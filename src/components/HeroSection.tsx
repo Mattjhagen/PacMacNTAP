@@ -5,10 +5,11 @@ import { ShieldCheck, ChevronRight, Volume2, Shield, Eye, Database } from 'lucid
 export default function HeroSection() {
   const [textIndex, setTextIndex] = useState(0);
   const rotatingPhrases = [
-    'Screening suspicious calls…',
-    'Wasting scammer time…',
-    'Protecting your number…',
-    'Learning new threats…'
+    'Probably a scam.',
+    'You don’t need this call.',
+    'Sending PackieAI instead…',
+    'Spam handled.',
+    'Unknown caller screened.'
   ];
 
   useEffect(() => {
@@ -84,7 +85,7 @@ export default function HeroSection() {
           >
             <span className="w-2 h-2 rounded-full bg-white animate-pulse" />
             <span className="text-[10px] uppercase font-mono tracking-widest text-brand-gray-300">
-              COMING SOON
+              COMING SOON FROM PACMAC MOBILE
             </span>
           </motion.div>
 
@@ -93,9 +94,9 @@ export default function HeroSection() {
             variants={itemVariants}
             className="font-display text-4xl sm:text-6xl md:text-8xl font-medium tracking-tight leading-[1.05] text-white"
           >
-            Your AI Shield <br />
+            Let the AI answer <br />
             <span className="text-transparent bg-clip-text bg-gradient-to-b from-white via-white to-brand-gray-550 text-glow-sm">
-              Against Scammers.
+              the annoying calls.
             </span>
           </motion.h1>
 
@@ -104,7 +105,7 @@ export default function HeroSection() {
             variants={itemVariants}
             className="mt-6 md:mt-8 text-base md:text-xl text-brand-gray-300 max-w-2xl leading-relaxed font-sans font-light"
           >
-            PackieAI answers the calls you shouldn’t have to. Protect your focus, preserve your privacy, and silence fraudulent robocallers forever.
+            PackieAI screens spam calls, wastes scammers’ time, and helps protect your peace and privacy.
           </motion.p>
 
           {/* Typewriter Rotating Slogan */}
@@ -134,10 +135,10 @@ export default function HeroSection() {
           >
             <div className="flex items-center justify-between border-b border-white/5 pb-2.5 font-mono text-[10px] text-brand-gray-400 uppercase tracking-widest">
               <div className="flex items-center gap-1.5">
-                <span className="w-1.5 h-1.5 rounded-full bg-red-500 animate-ping" />
-                <span>INTERCEPTING SIGNAL</span>
+                <span className="w-1.5 h-1.5 rounded-full bg-amber-500 animate-ping" />
+                <span>SCREENING INCOMING CALL</span>
               </div>
-              <span className="text-white/60">PACKIE_VOICE_CORE</span>
+              <span className="text-white/60">PACKIE ASSISTANT</span>
             </div>
 
             {/* Glowing wave segments */}
@@ -171,7 +172,7 @@ export default function HeroSection() {
 
             <div className="text-[10px] font-mono text-brand-gray-500 flex justify-between pt-1">
               <span>0.00 kHz</span>
-              <span className="text-white/40">AI DESTRUCTION ACTIVE</span>
+              <span className="text-white/40">SPAM SCREENER RUNNING</span>
               <span>12.4 kHz</span>
             </div>
           </motion.div>
@@ -193,7 +194,7 @@ export default function HeroSection() {
               onClick={() => handleScrollTo('#how-it-works')}
               className="w-full sm:w-56 py-3.5 text-center text-sm font-mono tracking-tight text-white border border-white/10 hover:border-white/40 rounded-xl hover:bg-white/5 transition-all flex items-center justify-center gap-2 cursor-pointer"
             >
-              <span>See How It Works</span>
+              <span>How It Works</span>
             </button>
           </motion.div>
 
@@ -204,27 +205,27 @@ export default function HeroSection() {
           >
             <div>
               <div className="font-mono text-[10px] uppercase text-brand-gray-500 tracking-wider">
-                Defensive Shield
+                Call Protection
               </div>
               <div className="text-xs md:text-sm font-light text-brand-gray-300 mt-1 flex items-center gap-1.5">
                 <span className="w-1.5 h-1.5 rounded-full bg-white" />
-                Active Call Persona
+                Smart Voice Assistant
               </div>
             </div>
             <div>
               <div className="font-mono text-[10px] uppercase text-brand-gray-500 tracking-wider">
-                Intelligence Speed
+                Zero Hassle
               </div>
               <div className="text-xs md:text-sm font-light text-brand-gray-300 mt-1">
-                Real-Time Voice LLM
+                Wastes Scammer Time
               </div>
             </div>
             <div className="col-span-2 sm:col-span-1">
               <div className="font-mono text-[10px] uppercase text-brand-gray-500 tracking-wider">
-                Network Native
+                Mobile Integration
               </div>
               <div className="text-xs md:text-sm font-light text-brand-gray-300 mt-1">
-                Zero App Download Required
+                Works on Any Phone
               </div>
             </div>
           </motion.div>

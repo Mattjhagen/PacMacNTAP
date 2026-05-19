@@ -15,9 +15,9 @@ export default function Navbar() {
   }, []);
 
   const menuItems = [
-    { label: 'Defense Matrix', href: '#coming-soon' },
+    { label: 'Coming Soon', href: '#coming-soon' },
     { label: 'Capabilities', href: '#how-it-works' },
-    { label: 'Live Intercepts', href: '#live-feed' },
+    { label: 'Activity Feed', href: '#live-feed' },
     { label: 'Early Access', href: '#waitlist' },
   ];
 
@@ -132,7 +132,7 @@ export default function Navbar() {
                 onClick={(e) => handleLinkClick(e, '#waitlist')}
                 className="w-full text-center py-3.5 text-base font-semibold text-black bg-white rounded-xl shadow-lg"
               >
-                Request Early Access
+                Request Invite
               </a>
             </div>
           </motion.div>

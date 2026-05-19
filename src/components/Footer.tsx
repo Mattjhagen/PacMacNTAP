@@ -22,29 +22,29 @@ export default function Footer() {
           </div>
 
           {/* Subtext description */}
-          <p className="text-xs text-brand-gray-500 max-w-sm text-center md:text-right leading-relaxed font-mono">
-            [PACKIEAI COMMUNICATIONS SECURITY INC.] BUILDING REAL-TIME DEFENSIVE SYSTEMS AND SPEECH SYNTHESIS SECURE FIREWALLS.
+          <p className="text-xs text-brand-gray-400 max-w-sm text-center md:text-right leading-relaxed font-sans">
+            An intelligent call screening assistant, powered by PacMac Mobile connectivity.
           </p>
         </div>
 
         {/* Copyright, legal, domain details */}
         <div className="flex flex-col sm:flex-row items-center justify-between gap-6 pt-8 text-[11px] font-mono text-brand-gray-500">
           <div className="flex flex-wrap justify-center sm:justify-start gap-4 sm:gap-6">
-            <span>© {currentYear} PackieAI Security Corp.</span>
+            <span>© {currentYear} PacMac Mobile. All rights reserved.</span>
             <span className="text-brand-gray-700">|</span>
-            <span className="text-brand-gray-500">packieai.com</span>
+            <span className="text-brand-gray-500">pacmacmobile.com</span>
           </div>
 
           {/* Meta technical telemetry metrics */}
           <div className="flex items-center gap-4 text-brand-gray-600">
             <span className="flex items-center gap-1.5">
               <Lock className="w-3.5 h-3.5" />
-              AES 256 END-POINT PROTECTION
+              SECURE INTEGRATION
             </span>
             <span className="h-3 w-[1px] bg-white/5" />
             <span className="flex items-center gap-1.5 font-sans font-medium text-brand-gray-500">
               <span className="w-2 h-2 rounded-full bg-green-500 animate-pulse inline-block mr-1" />
-              SHIELD SECURE
+              STABLE FEED
             </span>
           </div>
         </div>

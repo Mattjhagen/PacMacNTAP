@@ -15,29 +15,29 @@ export default function HowItWorks() {
     {
       id: 'screening',
       num: '01',
-      title: 'AI Call Screening',
-      description: 'Detect suspicious callers before you answer. PackieAI parses incoming parameters instantly to verify legitimacy.',
+      title: 'Spam Call Screening',
+      description: 'Find out who’s calling before you waste your time.',
       icon: <ShieldAlert className="w-5 h-5 text-white" />,
     },
     {
       id: 'personas',
       num: '02',
-      title: 'Voice Personas',
-      description: 'Custom AI personalities engage scammers automatically, wasting their minutes with tailored defensive scripts.',
+      title: 'AI Call Personas',
+      description: 'Let customizable AI voices handle suspicious callers for you.',
       icon: <Users className="w-5 h-5 text-white" />,
     },
     {
       id: 'intelligence',
       num: '03',
-      title: 'Threat Intelligence',
-      description: 'Continuously learns from global spam and fraud patterns, deploying instant protections to our entire core network.',
+      title: 'Smart Learning',
+      description: 'PackieAI gets better at recognizing scam behavior over time.',
       icon: <Brain className="w-5 h-5 text-white" />,
     },
     {
       id: 'privacy',
       num: '04',
-      title: 'Privacy Protection',
-      description: 'Keep your real number and identity safer. Screen and route suspicious interactions with comprehensive security layers.',
+      title: 'Privacy Support',
+      description: 'Add another layer between scammers and your real number.',
       icon: <Key className="w-5 h-5 text-white" />,
     },
   ];
@@ -83,11 +83,11 @@ export default function HowItWorks() {
               <div className="h-[1px] w-12 bg-brand-gray-800" />
             </div>
             <h2 className="font-display text-3xl md:text-5xl font-medium tracking-tight text-white">
-              The Security Infrastructure
+              Smart Calling Protection
             </h2>
           </div>
           <p className="text-sm md:text-base text-brand-gray-400 font-light max-w-md md:text-left text-center leading-relaxed font-sans">
-            We operate fully secure, real-time audio shielding, shielding your cell number from the continuous barrage of unwanted interruptions.
+            We’re adding a powerful assistant to your PacMac Mobile service, helping you block, screen, and deal with unwanted calls.
           </p>
         </div>
 
@@ -196,7 +196,7 @@ function TiltCard({ card, itemVariants }: TiltCardProps) {
         </div>
 
         <div className="mt-8 pt-4 border-t border-white/5 flex items-center justify-between font-mono text-[10px] text-brand-gray-400 group-hover:text-white">
-          <span>SECURE CONNECTOR</span>
+          <span>PACMAC SERVICE FEATURE</span>
           <ArrowUpRight className="w-3.5 h-3.5 opacity-60" />
         </div>
       </div>

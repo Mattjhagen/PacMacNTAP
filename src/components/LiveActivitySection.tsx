@@ -11,10 +11,10 @@ interface TerminalLog {
 
 export default function LiveActivitySection() {
   const [logs, setLogs] = useState<TerminalLog[]>([
-    { id: '1', timestamp: '20:18:02', type: 'info', text: 'SYSTEM SETUP: PackieAI Threat Matrix initialization complete.' },
-    { id: '2', timestamp: '20:18:15', type: 'success', text: 'SYNC: Global blocklists updated (~4,812 signatures matched).' },
-    { id: '3', timestamp: '20:19:04', type: 'warn', text: 'INTERCEPTER DETECTED: +1 (844) 302-2931 FLAGGED AS IRS EXPLOIT.' },
-    { id: '4', timestamp: '20:19:05', type: 'active', text: 'AI Persona "Arthur" successfully engaged caller. Initiating delay matrix.' },
+    { id: '1', timestamp: '20:18:02', type: 'info', text: 'SYSTEM SETUP: PackieAI active and integrated with PacMac Mobile.' },
+    { id: '2', timestamp: '20:18:15', type: 'success', text: 'DATABASE: Spam list verified. 0 unrecognized threats.' },
+    { id: '3', timestamp: '20:19:04', type: 'warn', text: 'SCREEN: Incoming call from +1 (844) 302-2931 flagged as possible robocall.' },
+    { id: '4', timestamp: '20:19:05', type: 'active', text: 'ACTIVE: AI Assistant answered call. Routing conversation.' },
   ]);
 
   const [scammerMinutesWasted, setScammerMinutesWasted] = useState(1480);
@@ -44,14 +44,14 @@ export default function LiveActivitySection() {
     if (!isFeedRunning) return;
 
     const phrases = [
-      { text: 'SECURE SCREEN: Evaluated caller signature on +1 (800) 934-8422. Low threat margin - verified as dental appointment reminder.', type: 'info' as const },
-      { text: 'ALERT: Blocked pre-recorded robocall "Premium Health Insurance Upgrade". Connection silenced.', type: 'warn' as const },
-      { text: 'INTERCEPT: +1 (212) 584-0199 routed to AI Persona "Beatrice" (Elderly voice profile).', type: 'active' as const },
-      { text: 'THREAT BLOCK: Robocall database updated with 12 new VOIP subnet ranges.', type: 'success' as const },
-      { text: 'SCAMMER FRUSTRATED: Target left call after 4m 52s of interactive conversation with AI Persona "Beatrice".', type: 'success' as const },
-      { text: 'THREAT ISOLATED: Blocked synthetic voice spoof attack trying to trigger authorization keywords.', type: 'warn' as const },
-      { text: 'SECURE ROUTE: Real-time dialer from "Dr. Rivera’s Office" bypassed interceptor cleanly.', type: 'success' as const },
-      { text: 'INTERCEPT: +1 (415) 304-4911 identified as fake Bank Fraud Notification. Routing to persona "Chuck".', type: 'active' as const },
+      { text: 'Unknown caller screened on +1 (800) 934-8422. Low threat margin - verified as dental appointment reminder.', type: 'info' as const },
+      { text: 'Possible robocall detected: "Premium Health Insurance Upgrade". Blocked.', type: 'warn' as const },
+      { text: 'AI assistant answered call from +1 (212) 584-0199. Engaging "Beatrice" persona.', type: 'active' as const },
+      { text: 'Spam list synchronized cleanly. No update required.', type: 'success' as const },
+      { text: 'Caller disconnected after 4 minutes of chatting with "Beatrice" persona.', type: 'success' as const },
+      { text: 'Spam likely avoided. Silenced automated credit card promotion dialer.', type: 'warn' as const },
+      { text: 'Call forwarded safely: "Dr. Rivera’s Office" bypassed screener to reach phone.', type: 'success' as const },
+      { text: 'Possible robocall detected: +1 (415) 304-4911 flagged as "Unknown Bank Promo".', type: 'active' as const },
     ];
 
     const interval = setInterval(() => {
@@ -107,36 +107,35 @@ export default function LiveActivitySection() {
 
       <div className="max-w-7xl mx-auto relative z-10">
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-12 lg:gap-16 items-center">
-          
-          {/* Narrative Content */}
+                   {/* Narrative Content */}
           <div className="lg:col-span-5 space-y-6 text-left">
             <div className="flex items-center gap-3">
-              <span className="font-mono text-xs text-brand-gray-500 uppercase tracking-widest">
-                03 // DEFENSE FEED
+              <span className="font-mono text-xs text-brand-gray-550 uppercase tracking-widest">
+                03 // ACTIVITY FEED
               </span>
               <div className="h-[1px] w-12 bg-brand-gray-800" />
             </div>
 
             <h2 className="font-display text-3xl md:text-5xl font-medium tracking-tight text-white leading-tight">
-              Live Scam <br />
-              Interception
+              Live Call <br />
+              Screener
             </h2>
 
             <p className="text-sm md:text-base text-brand-gray-400 font-sans font-light leading-relaxed">
-              Witness our defensive layers filtering callers in real time. We intercept fraudulent robocallers, flag automated target ranges, and automatically dispatch speech-synthesis voice profiles to tie up caller agents securely.
+              Watch how our smart assistant manages callers in real-time. PackieAI detects robocalls, screens unknown numbers, and lets natural automated voices politely handle spam campaigns so your phone stays quiet.
             </p>
 
             <div className="grid grid-cols-2 gap-4 pt-6 border-t border-white/5 font-mono">
               <div className="border border-white/10 rounded-xl bg-white/[0.01] p-4 text-left">
-                <span className="text-[10px] text-brand-gray-500 uppercase block">SCAMMER TIME WASTED</span>
+                <span className="text-[10px] text-brand-gray-500 uppercase block">ASSISTANT CHECKS</span>
                 <span className="text-white text-xl md:text-2xl font-bold tracking-tight block mt-0.5 animate-pulse">
-                  {scammerMinutesWasted} min
+                  {scammerMinutesWasted} calls
                 </span>
               </div>
               <div className="border border-white/10 rounded-xl bg-white/[0.01] p-4 text-left">
-                <span className="text-[10px] text-brand-gray-500 uppercase block">ACTIVE SHIELD LOCKS</span>
+                <span className="text-[10px] text-brand-gray-500 uppercase block">ACTIVE SCREENINGS</span>
                 <span className="text-white text-xl md:text-2xl font-bold tracking-tight block mt-0.5">
-                  {activeInterceptions} Calls
+                  {activeInterceptions} Screened
                 </span>
               </div>
             </div>
@@ -172,7 +171,7 @@ export default function LiveActivitySection() {
                 <div className="flex items-center gap-2">
                   <Terminal className="w-4 h-4 text-white" />
                   <span className="font-mono text-[11px] text-brand-gray-400 uppercase tracking-widest font-semibold">
-                    Threat_Shield_Terminal_V2
+                    Packie_Call_Assistant_Feed
                   </span>
                 </div>
                 <div className="flex items-center gap-1.5">
@@ -188,7 +187,7 @@ export default function LiveActivitySection() {
                 className="flex-1 p-6 font-mono text-[11px] md:text-xs overflow-y-auto space-y-3.5 scrollbar-thin text-left bg-black selection:bg-white selection:text-black"
                 style={{ scrollBehavior: 'smooth' }}
               >
-                <div className="text-brand-gray-500">// INITIALIZE PACKIE CONNECTIVITY PROTOCOLS V.2.14</div>
+                <div className="text-brand-gray-500">// CONNECTED TO PACMAC NETWORK CALL PORT</div>
                 
                 <AnimatePresence>
                   {logs.map((log) => (
@@ -212,9 +211,9 @@ export default function LiveActivitySection() {
                               : 'text-brand-gray-400'
                           }`}
                         >
-                          {log.type === 'warn' && '! [WARNING]'}
-                          {log.type === 'success' && '✓ [PROTECTED]'}
-                          {log.type === 'active' && '● [ENGAGED]'}
+                          {log.type === 'warn' && '! [SPAM]'}
+                          {log.type === 'success' && '✓ [ROUTED]'}
+                          {log.type === 'active' && '● [SCREENING]'}
                           {log.type === 'info' && '• [SIGNAL]'}
                         </span>
                         <span className="text-brand-gray-300 leading-relaxed font-light">{log.text}</span>
@@ -226,17 +225,17 @@ export default function LiveActivitySection() {
                 {/* Blinking trailing cursor */}
                 <div className="flex items-center gap-1 text-brand-gray-400 font-bold pt-1">
                   <ChevronRight className="w-3.5 h-3.5 text-white/40" />
-                  <span>Listening to call activity matrix</span>
+                  <span>Monitoring network call activity...</span>
                   <span className="w-1.5 h-4 bg-white animate-pulse" />
                 </div>
               </div>
 
               {/* Terminal status bar */}
               <div className="bg-[#121212] border-t border-white/5 py-2 px-4 flex items-center justify-between font-mono text-[9px] text-brand-gray-500">
-                <span>PORT: SECURE VOIP TRUNK</span>
-                <span>LATENCY: 42MS</span>
+                <span>SERVICE: PACMAC MOBILE INTEGRATED</span>
+                <span>STATUS: ACTIVE</span>
                 <span className="text-white uppercase font-bold tracking-widest animate-pulse">
-                  MATRIX PROTECTED
+                  SYSTEM READY
                 </span>
               </div>
             </div>

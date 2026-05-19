@@ -1,6 +1,6 @@
 {
   "name": "PackieAI",
-  "description": "Your AI Shield Against Scammers. PackieAI answers the calls you shouldn't have to with intelligent voice personas, real-time screening, and threat intelligence.",
+  "description": "An intelligent call screening assistant under the PacMac Mobile ecosystem. PackieAI answers the calls you shouldn't have to by screening spam, wasting scammers' time, and protecting your privacy.",
   "requestFramePermissions": [],
   "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
 }
