@@ -74,20 +74,20 @@ export default function HowItWorks() {
       <div className="max-w-7xl mx-auto relative z-10">
         
         {/* Section Header */}
-        <div className="text-center md:text-left mb-16 md:mb-24 flex flex-col md:flex-row md:items-end justify-between gap-6">
+        <div className="text-center md:text-left mb-16 md:mb-20 flex flex-col md:flex-row md:items-end justify-between gap-6">
           <div>
             <div className="flex items-center justify-center md:justify-start gap-3 mb-4">
               <span className="font-mono text-xs text-brand-gray-500 uppercase tracking-widest">
-                02 // CAPABILITIES
+                04 // SMART ADD-ON
               </span>
               <div className="h-[1px] w-12 bg-brand-gray-800" />
             </div>
             <h2 className="font-display text-3xl md:text-5xl font-medium tracking-tight text-white">
-              Smart Calling Protection
+              Meet PackieAI
             </h2>
           </div>
-          <p className="text-sm md:text-base text-brand-gray-400 font-light max-w-md md:text-left text-center leading-relaxed font-sans">
-            We’re adding a powerful assistant to your PacMac Mobile service, helping you block, screen, and deal with unwanted calls.
+          <p className="text-sm md:text-base text-brand-gray-400 font-sans font-light max-w-sm md:text-left text-center leading-relaxed">
+            A smarter way to deal with spam calls. This optional AI assistant is designed inside PacMac Mobile’s platform as a built-in feature to screen and manage calls.
           </p>
         </div>
 

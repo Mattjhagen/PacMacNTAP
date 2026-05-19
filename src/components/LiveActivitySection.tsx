@@ -110,19 +110,19 @@ export default function LiveActivitySection() {
                    {/* Narrative Content */}
           <div className="lg:col-span-5 space-y-6 text-left">
             <div className="flex items-center gap-3">
-              <span className="font-mono text-xs text-brand-gray-550 uppercase tracking-widest">
-                03 // ACTIVITY FEED
+              <span className="font-mono text-xs text-brand-gray-500 uppercase tracking-widest">
+                05 // ASSISTANT IN ACTION
               </span>
               <div className="h-[1px] w-12 bg-brand-gray-800" />
             </div>
 
             <h2 className="font-display text-3xl md:text-5xl font-medium tracking-tight text-white leading-tight">
-              Live Call <br />
-              Screener
+              Watch it <br />
+              in action
             </h2>
 
             <p className="text-sm md:text-base text-brand-gray-400 font-sans font-light leading-relaxed">
-              Watch how our smart assistant manages callers in real-time. PackieAI detects robocalls, screens unknown numbers, and lets natural automated voices politely handle spam campaigns so your phone stays quiet.
+              See how easily PackieAI screens and handles incoming spam behind the scenes. Built as an account-level setting that runs quietly in the PacMac Mobile network database.
             </p>
 
             <div className="grid grid-cols-2 gap-4 pt-6 border-t border-white/5 font-mono">

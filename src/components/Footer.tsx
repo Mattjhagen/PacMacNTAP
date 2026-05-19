@@ -14,16 +14,16 @@ export default function Footer() {
           {/* Logo brand */}
           <div className="flex items-center gap-2.5 font-display text-lg font-bold text-white">
             <div className="w-7 h-7 rounded-lg border border-white/10 bg-white/5 flex items-center justify-center">
-              <Shield className="w-3.5 h-3.5 text-white" />
+              <Globe className="w-3.5 h-3.5 text-white animate-pulse" />
             </div>
             <span>
-              Packie<span className="font-light text-brand-gray-400">AI</span>
+              PacMac<span className="font-light text-brand-gray-400"> Mobile</span>
             </span>
           </div>
 
           {/* Subtext description */}
           <p className="text-xs text-brand-gray-400 max-w-sm text-center md:text-right leading-relaxed font-sans">
-            An intelligent call screening assistant, powered by PacMac Mobile connectivity.
+            Modern mobile service built for real people, combining affordable connectivity and approachable support with smart tools like PackieAI call screening.
           </p>
         </div>
 

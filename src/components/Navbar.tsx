@@ -15,10 +15,10 @@ export default function Navbar() {
   }, []);
 
   const menuItems = [
-    { label: 'Coming Soon', href: '#coming-soon' },
-    { label: 'Capabilities', href: '#how-it-works' },
-    { label: 'Activity Feed', href: '#live-feed' },
-    { label: 'Early Access', href: '#waitlist' },
+    { label: 'Wireless', href: '#pacmac-features' },
+    { label: 'PackieAI', href: '#how-it-works' },
+    { label: 'Demo', href: '#live-feed' },
+    { label: 'Early Access', href: '#coming-soon' },
   ];
 
   const handleLinkClick = (e: React.MouseEvent<HTMLAnchorElement>, href: string) => {
@@ -59,11 +59,11 @@ export default function Navbar() {
             className="flex items-center gap-2.5 font-display text-xl font-bold tracking-tight text-white group"
           >
             <div className="relative flex items-center justify-center w-8 h-8 rounded-lg border border-white/20 bg-white/5 transition-all group-hover:border-white/50 overflow-hidden">
-              <Shield className="w-4 h-4 text-white animate-pulse" />
+              <Radio className="w-4 h-4 text-white animate-pulse" />
               <div className="absolute inset-0 bg-white/10 opacity-0 group-hover:opacity-100 transition-opacity" />
             </div>
             <span>
-              Packie<span className="font-light text-brand-gray-300">AI</span>
+              PacMac<span className="font-light text-brand-gray-300"> Mobile</span>
             </span>
           </a>
 

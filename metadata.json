@@ -1,6 +1,6 @@
 {
-  "name": "PackieAI",
-  "description": "An intelligent call screening assistant under the PacMac Mobile ecosystem. PackieAI answers the calls you shouldn't have to by screening spam, wasting scammers' time, and protecting your privacy.",
+  "name": "PacMac Mobile",
+  "description": "Modern wireless and mobile connectivity built for real people, featuring approachable community support and the smart integrated PackieAI call screener.",
   "requestFramePermissions": [],
   "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
 }

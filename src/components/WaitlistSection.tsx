@@ -45,7 +45,7 @@ export default function WaitlistSection() {
             Want early access?
           </h2>
           <p className="text-sm md:text-base text-brand-gray-400 font-light max-w-lg leading-relaxed mb-12 font-sans">
-            We’re opening PackieAI to early users soon. Join the list and we’ll let you know when it’s ready.
+            We’re launching PacMac Mobile soon, along with smart built-in features like PackieAI. Join the list to reserve your spot.
           </p>
 
           {/* Glassmorphism signup Card */}

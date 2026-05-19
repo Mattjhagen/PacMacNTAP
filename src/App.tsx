@@ -1,6 +1,7 @@
 import React from 'react';
 import Navbar from './components/Navbar';
 import HeroSection from './components/HeroSection';
+import WhatIsPacMac from './components/WhatIsPacMac';
 import ComingSoonSection from './components/ComingSoonSection';
 import HowItWorks from './components/HowItWorks';
 import LiveActivitySection from './components/LiveActivitySection';
@@ -33,6 +34,9 @@ export default function App() {
         
         {/* HERO SECTION - Waveform, rotating slogans */}
         <HeroSection />
+
+        {/* WHAT PACMAC MOBILE IS BUILDING */}
+        <WhatIsPacMac />
         
         {/* LAUNCHING SOON SECTION - Dynamic Live Countdown */}
         <ComingSoonSection />
