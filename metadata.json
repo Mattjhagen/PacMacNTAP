@@ -1,6 +1,6 @@
 {
-  "name": "PacMac Mobile",
-  "description": "Modern wireless and mobile connectivity built for people, featuring a premium minimal monochrome landing page.",
+  "name": "PackieAI",
+  "description": "Your AI Shield Against Scammers. PackieAI answers the calls you shouldn't have to with intelligent voice personas, real-time screening, and threat intelligence.",
   "requestFramePermissions": [],
   "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
 }

@@ -1,58 +1,55 @@
-import React, { useState } from 'react';
+import React from 'react';
 import Navbar from './components/Navbar';
 import HeroSection from './components/HeroSection';
-import AboutSection from './components/AboutSection';
-import FeaturesSection from './components/FeaturesSection';
-import FutureVisionSection from './components/FutureVisionSection';
+import ComingSoonSection from './components/ComingSoonSection';
+import HowItWorks from './components/HowItWorks';
+import LiveActivitySection from './components/LiveActivitySection';
 import WaitlistSection from './components/WaitlistSection';
 import Footer from './components/Footer';
-import PartnerModal from './components/PartnerModal';
 import ParticleBackground from './components/ParticleBackground';
 import CursorGlow from './components/CursorGlow';
 
 export default function App() {
-  const [isPartnerOpen, setIsPartnerOpen] = useState(false);
-
   return (
     <div className="relative min-h-screen bg-black text-white font-sans antialiased overflow-x-hidden selection:bg-white selection:text-black">
       
-      {/* 1. Subtle global noise texture overlay */}
+      {/* Subtle global noise texture overlay */}
       <div className="noise-overlay" />
 
-      {/* 2. Custom mouse orb trailing layout cursor follower (disabled on mobile) */}
+      {/* Cyber scanlines overlay for futuristic aesthetic */}
+      <div className="scanlines" />
+
+      {/* Custom mouse orb trailing layout cursor follower (auto-disabled on mobile) */}
       <CursorGlow />
 
-      {/* 3. Interactive live physics particle starfield canvas */}
+      {/* Interactive live physics particle starfield canvas */}
       <ParticleBackground />
 
-      {/* 4. Elegant sticky navigation header */}
-      <Navbar onOpenPartner={() => setIsPartnerOpen(true)} />
+      {/* Elegant sticky navigation header */}
+      <Navbar />
 
-      {/* 5. Direct section hierarchy */}
+      {/* Section hierarchy */}
       <main className="relative z-10">
         
-        {/* HERO SECTION */}
-        <HeroSection onOpenPartner={() => setIsPartnerOpen(true)} />
+        {/* HERO SECTION - Waveform, rotating slogans */}
+        <HeroSection />
         
-        {/* ABOUT SECTION */}
-        <AboutSection />
+        {/* LAUNCHING SOON SECTION - Dynamic Live Countdown */}
+        <ComingSoonSection />
         
-        {/* FEATURES SECTION (3 main cards with interactive bandwidth price estimator) */}
-        <FeaturesSection />
+        {/* HOW IT WORKS SECTION - 3D Perspective Tilt Cards */}
+        <HowItWorks />
         
-        {/* FUTURE VISION SECTION (Expandable target local roadmap targets) */}
-        <FutureVisionSection />
+        {/* LIVE INTERCEPT SCAM ACTIVITY SECTION - Terminal Stream and stats */}
+        <LiveActivitySection />
         
         {/* EMAIL WAITLIST SECTION */}
         <WaitlistSection />
         
       </main>
 
-      {/* 6. Professional local footer */}
+      {/* Professional local footer */}
       <Footer />
-
-      {/* 7. Dialog Form Portal for Partnership requests */}
-      <PartnerModal isOpen={isPartnerOpen} onClose={() => setIsPartnerOpen(false)} />
 
     </div>
   );
