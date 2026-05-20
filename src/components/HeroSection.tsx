@@ -78,9 +78,9 @@ export default function HeroSection() {
             variants={itemVariants}
             className="font-display text-4xl sm:text-6xl md:text-8xl font-medium tracking-tight leading-[1.05] text-white"
           >
-            Modern mobile service <br />
+            Prepaid wireless <br />
             <span className="text-transparent bg-clip-text bg-gradient-to-b from-white via-white to-brand-gray-550 text-glow-sm">
-              built for real people.
+              for the AI generation.
             </span>
           </motion.h1>
 
@@ -89,7 +89,7 @@ export default function HeroSection() {
             variants={itemVariants}
             className="mt-6 md:mt-8 text-base md:text-xl text-brand-gray-300 max-w-2xl leading-relaxed font-sans font-light"
           >
-            PacMac Mobile combines affordable connectivity, modern technology, and community-first support into a simpler wireless experience.
+            Buy a phone, bring your own device, or activate instantly with eSIM. PacMac Mobile combines modern prepaid service, AI-powered tools, and zero corporate telecom energy.
           </motion.p>
 
           {/* Main Hero Call-to-Actions */}
@@ -98,18 +98,18 @@ export default function HeroSection() {
             className="mt-10 md:mt-12 flex flex-col sm:flex-row items-center gap-4 w-full sm:w-auto z-10"
           >
             <button
-              onClick={() => handleScrollTo('#coming-soon')}
+              onClick={() => handleScrollTo('#byop')}
               className="group relative w-full sm:w-56 py-3.5 text-center text-sm font-semibold text-black bg-white hover:bg-brand-gray-150 rounded-xl transition-all shadow-[0_0_20px_rgba(255,255,255,0.15)] hover:shadow-[0_0_30px_rgba(255,255,255,0.30)] flex items-center justify-center gap-2 cursor-pointer"
             >
-              Coming Soon
+              Get Started (eSIM)
               <ChevronRight className="w-4 h-4 transition-transform group-hover:translate-x-1" />
             </button>
 
             <button
-              onClick={() => handleScrollTo('#pacmac-features')}
+              onClick={() => handleScrollTo('#phones')}
               className="w-full sm:w-56 py-3.5 text-center text-sm font-mono tracking-tight text-white border border-white/10 hover:border-white/40 rounded-xl hover:bg-white/5 transition-all flex items-center justify-center gap-2 cursor-pointer"
             >
-              <span>Explore Features</span>
+              <span>Browse Phones</span>
             </button>
           </motion.div>
 

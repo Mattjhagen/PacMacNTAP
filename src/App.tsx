@@ -2,9 +2,14 @@ import React from 'react';
 import Navbar from './components/Navbar';
 import HeroSection from './components/HeroSection';
 import WhatIsPacMac from './components/WhatIsPacMac';
-import ComingSoonSection from './components/ComingSoonSection';
+import PhonesSection from './components/PhonesSection';
+import ByopSection from './components/ByopSection';
+import EsimSection from './components/EsimSection';
+import AdaptivePlansSection from './components/AdaptivePlansSection';
 import HowItWorks from './components/HowItWorks';
 import LiveActivitySection from './components/LiveActivitySection';
+import OperationsPortal from './components/OperationsPortal';
+import ComingSoonSection from './components/ComingSoonSection';
 import WaitlistSection from './components/WaitlistSection';
 import Footer from './components/Footer';
 import ParticleBackground from './components/ParticleBackground';
@@ -35,23 +40,37 @@ export default function App() {
         {/* HERO SECTION - Waveform, rotating slogans */}
         <HeroSection />
 
-        {/* WHAT PACMAC MOBILE IS BUILDING */}
+        {/* 01 // WHAT PACMAC MOBILE IS BUILDING */}
         <WhatIsPacMac />
+
+        {/* 02 // POCKET COMPUTERS & FINANCING */}
+        <PhonesSection />
+
+        {/* 03 // BRING YOUR OWN PHONE (BYOP) COMPATIBILITY CHECKER */}
+        <ByopSection />
+
+        {/* 04 // eSIM ACTIVATION */}
+        <EsimSection />
+
+        {/* 05 // ADAPTIVE AI PLANS & CHAOS ANALYZER */}
+        <AdaptivePlansSection />
         
-        {/* HOW IT WORKS SECTION - 3D Perspective Tilt Cards */}
+        {/* 06 // HOW IT WORKS SECTION - 3D Perspective Tilt Cards */}
         <HowItWorks />
         
-        {/* LIVE INTERCEPT SCAM ACTIVITY SECTION - Terminal Stream and stats */}
+        {/* 07 // LIVE INTERCEPT SCAM ACTIVITY SECTION - Terminal Stream and stats */}
         <LiveActivitySection />
+
+        {/* 08 // OPERATIONS & BILLING DASHBOARD SIMULATOR */}
+        <OperationsPortal />
         
-        {/* LAUNCHING SOON SECTION - Dynamic Live Countdown */}
+        {/* 09 // LAUNCHING SOON SECTION - Dynamic Live Countdown */}
         <ComingSoonSection />
         
-        {/* EMAIL WAITLIST SECTION */}
+        {/* 10 // EMAIL WAITLIST SECTION */}
         <WaitlistSection />
         
       </main>
-
 
       {/* Professional local footer */}
       <Footer />

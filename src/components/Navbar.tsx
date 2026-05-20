@@ -15,10 +15,13 @@ export default function Navbar() {
   }, []);
 
   const menuItems = [
-    { label: 'Wireless', href: '#pacmac-features' },
+    { label: 'Phones', href: '#phones' },
+    { label: 'BYOP', href: '#byop' },
+    { label: 'Plans', href: '#adaptive-plans' },
+    { label: 'eSIM', href: '#esim' },
+    { label: 'AI Billing', href: '#portal' },
     { label: 'PackieAI', href: '#how-it-works' },
-    { label: 'Demo', href: '#live-feed' },
-    { label: 'Early Access', href: '#coming-soon' },
+    { label: 'Support', href: '#waitlist' },
   ];
 
   const handleLinkClick = (e: React.MouseEvent<HTMLAnchorElement>, href: string) => {
@@ -88,7 +91,7 @@ export default function Navbar() {
               onClick={(e) => handleLinkClick(e, '#waitlist')}
               className="px-5 py-2 text-sm font-semibold tracking-tight text-black bg-white hover:bg-brand-gray-150 rounded-lg transition-all shadow-[0_0_15px_rgba(255,255,255,0.1)] hover:shadow-[0_0_20px_rgba(255,255,255,0.2)]"
             >
-              Sign Up
+              Get Started
             </a>
           </div>
 
@@ -132,7 +135,7 @@ export default function Navbar() {
                 onClick={(e) => handleLinkClick(e, '#waitlist')}
                 className="w-full text-center py-3.5 text-base font-semibold text-black bg-white rounded-xl shadow-lg"
               >
-                Request Invite
+                Get Started
               </a>
             </div>
           </motion.div>

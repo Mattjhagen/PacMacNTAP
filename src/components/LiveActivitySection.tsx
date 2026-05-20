@@ -111,7 +111,7 @@ export default function LiveActivitySection() {
           <div className="lg:col-span-5 space-y-6 text-left">
             <div className="flex items-center gap-3">
               <span className="font-mono text-xs text-brand-gray-500 uppercase tracking-widest">
-                03 // WATCH IT IN ACTION
+                07 // WATCH IT IN ACTION
               </span>
               <div className="h-[1px] w-12 bg-brand-gray-800" />
             </div>

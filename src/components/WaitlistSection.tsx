@@ -37,7 +37,7 @@ export default function WaitlistSection() {
           <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full border border-white/5 bg-white/[0.02] backdrop-blur-md mb-8">
             <span className="w-1.5 h-1.5 rounded-full bg-white animate-pulse" />
             <span className="text-[10px] uppercase font-mono tracking-widest text-brand-gray-400">
-              05 // EARLY ACCESS
+              10 // EARLY ACCESS
             </span>
           </div>
 
