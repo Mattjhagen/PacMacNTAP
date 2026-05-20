@@ -1,7 +1,11 @@
 import React from 'react';
 import { Shield, Eye, Lock, Globe } from 'lucide-react';
 
-export default function Footer() {
+interface FooterProps {
+  onOpenAdmin: () => void;
+}
+
+export default function Footer({ onOpenAdmin }: FooterProps) {
   const currentYear = new Date().getFullYear();
 
   return (
@@ -32,7 +36,13 @@ export default function Footer() {
           <div className="flex flex-wrap justify-center sm:justify-start gap-4 sm:gap-6">
             <span>© {currentYear} PacMac Mobile. All rights reserved.</span>
             <span className="text-brand-gray-700">|</span>
-            <span className="text-brand-gray-500">pacmacmobile.com</span>
+            <button 
+              onClick={onOpenAdmin}
+              className="text-brand-gray-500 hover:text-white transition-colors cursor-pointer flex items-center gap-1 font-mono text-[11px]"
+            >
+              <Shield className="w-3.5 h-3.5 text-brand-gray-500" />
+              <span>ADMIN PORTAL</span>
+            </button>
           </div>
 
           {/* Meta technical telemetry metrics */}

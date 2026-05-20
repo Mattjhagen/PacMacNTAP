@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import Navbar from './components/Navbar';
 import HeroSection from './components/HeroSection';
 import WhatIsPacMac from './components/WhatIsPacMac';
@@ -9,8 +9,11 @@ import WaitlistSection from './components/WaitlistSection';
 import Footer from './components/Footer';
 import ParticleBackground from './components/ParticleBackground';
 import CursorGlow from './components/CursorGlow';
+import AdminPortal from './components/AdminPortal';
 
 export default function App() {
+  const [isAdminOpen, setIsAdminOpen] = useState(false);
+
   return (
     <div className="relative min-h-screen bg-black text-white font-sans antialiased overflow-x-hidden selection:bg-white selection:text-black">
       
@@ -53,7 +56,10 @@ export default function App() {
       </main>
 
       {/* Professional local footer */}
-      <Footer />
+      <Footer onOpenAdmin={() => setIsAdminOpen(true)} />
+
+      {/* Admin Control Center Modal overlay */}
+      <AdminPortal isOpen={isAdminOpen} onClose={() => setIsAdminOpen(false)} />
 
     </div>
   );

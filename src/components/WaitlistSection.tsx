@@ -9,19 +9,67 @@ export default function WaitlistSection() {
   const [isCompleted, setIsCompleted] = useState(false);
   const [waitlistNumber, setWaitlistNumber] = useState<number | null>(null);
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!name.trim() || !email.trim()) return;
 
     setIsSubmitting(true);
+    
+    // Generate waitlist number to persist
+    const generatedWaitlistNum = Math.floor(Math.random() * 450) + 2180;
+    setWaitlistNumber(generatedWaitlistNum);
 
-    // Simulate network submission delay
-    setTimeout(() => {
+    // Save registration locally
+    try {
+      const existingRaw = localStorage.getItem('pacmac_waitlist_signups');
+      let list = [];
+      if (existingRaw) {
+        try {
+          list = JSON.parse(existingRaw);
+        } catch (e) {
+          list = [];
+        }
+      }
+      
+      const newEntry = {
+        name: name.trim(),
+        email: email.trim(),
+        date: new Date().toISOString(),
+        waitlistNumber: generatedWaitlistNum,
+        status: "Active"
+      };
+      
+      localStorage.setItem('pacmac_waitlist_signups', JSON.stringify([newEntry, ...list]));
+    } catch (saveError) {
+      console.warn("Storage write failed (e.g., privacy/incognito filters):", saveError);
+    }
+
+    try {
+      // Send form data in the background to FormSubmit
+      const response = await fetch("https://formsubmit.co/ajax/mattjhagen0@gmail.com", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "Accept": "application/json"
+        },
+        body: JSON.stringify({
+          name: name,
+          email: email,
+          _subject: "✨ [PacMac Mobile] New Early Access Signup",
+          _replyto: email
+        })
+      });
+
+      if (!response.ok) {
+        throw new Error("FormSubmit submission failed");
+      }
+    } catch (error) {
+      // Graceful fallback to guarantee user gets completed state regardless of adblockers/network blocks
+      console.warn("Could not send form directly to FormSubmit, falling back to instant local registration:", error);
+    } finally {
       setIsSubmitting(false);
       setIsCompleted(true);
-      // Generate a realistic queue spot
-      setWaitlistNumber(Math.floor(Math.random() * 450) + 2180);
-    }, 1400);
+    }
   };
 
   return (
