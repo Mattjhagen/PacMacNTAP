@@ -4,6 +4,7 @@ import Navbar from './components/Navbar';
 import Footer from './components/Footer';
 import ParticleBackground from './components/ParticleBackground';
 import CursorGlow from './components/CursorGlow';
+import ErrorBoundary from './components/ErrorBoundary';
 
 // Views
 import HomeView from './components/HomeView';
@@ -45,16 +46,16 @@ export default function App() {
             </div>
           }>
             <Routes>
-              <Route path="/" element={<HomeView />} />
-              <Route path="/phones" element={<PhoneMarketplaceSection />} />
-              <Route path="/byop" element={<BYOPSection />} />
-              <Route path="/esim" element={<ESIMExperienceSection />} />
-              <Route path="/plans" element={<AdaptivePlansSection />} />
-              <Route path="/ai-billing" element={<AIBillingView />} />
-              <Route path="/support" element={<AISupportPreview />} />
-              <Route path="/dashboard" element={<CustomerDashboard />} />
-              <Route path="/checkout" element={<CheckoutView />} />
-              <Route path="/admin" element={<AdminDashboardPreview />} />
+              <Route path="/" element={<ErrorBoundary><HomeView /></ErrorBoundary>} />
+              <Route path="/phones" element={<ErrorBoundary><PhoneMarketplaceSection /></ErrorBoundary>} />
+              <Route path="/byop" element={<ErrorBoundary><BYOPSection /></ErrorBoundary>} />
+              <Route path="/esim" element={<ErrorBoundary><ESIMExperienceSection /></ErrorBoundary>} />
+              <Route path="/plans" element={<ErrorBoundary><AdaptivePlansSection /></ErrorBoundary>} />
+              <Route path="/ai-billing" element={<ErrorBoundary><AIBillingView /></ErrorBoundary>} />
+              <Route path="/support" element={<ErrorBoundary><AISupportPreview /></ErrorBoundary>} />
+              <Route path="/dashboard" element={<ErrorBoundary><CustomerDashboard /></ErrorBoundary>} />
+              <Route path="/checkout" element={<ErrorBoundary><CheckoutView /></ErrorBoundary>} />
+              <Route path="/admin" element={<ErrorBoundary><AdminDashboardPreview /></ErrorBoundary>} />
               {/* Fallback routing */}
               <Route path="*" element={<Navigate to="/" replace />} />
             </Routes>

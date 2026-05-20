@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { motion } from 'motion/react';
-import { Receipt, Sparkles, TrendingDown, ArrowRight, ShieldAlert, Cpu } from 'lucide-react';
+import { Receipt, Sparkles, TrendingDown, ArrowRight, ShieldAlert, Cpu, Check } from 'lucide-react';
 
 export default function AIBillingView() {
   const [optimizerActive, setOptimizerActive] = useState<boolean>(true);
