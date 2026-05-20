@@ -18,7 +18,7 @@ export default function AISupportPreview() {
     {
       id: '1',
       sender: 'ai',
-      text: "Hey! I'm Packie support AI. I have full system access to refresh lines, explain billing anomalies, configure APNs, and process SIM swaps. How can I help you today?",
+      text: "Hey. I'm Packie. I have direct access to our core routing systems, which means I can reprovision lines, swap eSIM profiles, and diagnose cell tower attachments. No flowcharts or canned loops. What's going on with your device?",
       timestamp: '10:02 AM'
     }
   ]);
@@ -61,29 +61,29 @@ export default function AISupportPreview() {
       const query = text.toLowerCase();
 
       if (query.includes('data') || query.includes('service') || query.includes('connection') || query.includes('signal') || query.includes('refresh')) {
-        addMessage('ai', "Your device lost network provisioning after the latest tower handoff. Let me run a line reprovisioning sequence directly on our MNO switch. Ready to start?", {
+        addMessage('ai', "Looks like your tower connection got stuck after the update. I can re-initialize the connection directly on the MNO routing switch. Shall I execute a line sync?", {
           type: 'provisioning',
           status: 'pending'
         });
       } 
       else if (query.includes('bill') || query.includes('pricing') || query.includes('charge') || query.includes('higher') || query.includes('different')) {
-        addMessage('ai', "I checked your usage records. You streamed 19GB of high-definition alien conspiracy documentaries at 1:43AM last Tuesday. Respectfully, that contributes to the data tier bump. Let me know if you'd like me to lock streaming bandwidth between 1AM and 5AM to prevent this.");
+        addMessage('ai', "Your usage dropped by 12GB last month, so your bill adjusted automatically to the $30 Standard Tier. No need to call or negotiate.");
       }
       else if (query.includes('switch') || query.includes('sim') || query.includes('swap') || query.includes('phone')) {
-        addMessage('ai', "Moving numbers is simple. For security, I need to send a 6-digit One-Time Passcode (OTP) to your registered number to authorize the SIM swap. Sending code now...", {
+        addMessage('ai', "To keep SIM swaps secure, I have sent a 4-digit verification code to your registered phone. Please enter it here.", {
           type: 'otp',
           status: 'pending'
         });
       }
       else if (query.includes('human') || query.includes('agent') || query.includes('escalate') || query.includes('ticket') || query.includes('help')) {
         setSessionMood('Frustrated');
-        addMessage('ai', "Understood. I will compile your troubleshooting metrics, network status logs, and active context directly into a Tier 2 Support Ticket for our operations room. Do you want to proceed?", {
+        addMessage('ai', "Got it. Let me bundle your network status metrics and active chat context directly into an operations ticket. A human engineer will review it in our control room. Sound good?", {
           type: 'escalation',
           status: 'pending'
         });
       }
       else {
-        addMessage('ai', "I understand. I can help reset your APN settings, process billing adjustments, approve eSIM transfers, or generate human support escalation logs. Try clicking one of the quick options or ask a specific question.");
+        addMessage('ai', "I can reprovision your connection profile, authorize a SIM swap, adjust billing brackets, or escalate to human operations. Just let me know what you need.");
       }
     }, 1200);
   };
@@ -102,7 +102,7 @@ export default function AISupportPreview() {
           setMessages(current => current.map(m => m.id === msgId ? { ...m, actionCard: { type: 'provisioning', status: 'success' } } : m));
           // Trigger follow-up AI message
           setTimeout(() => {
-            addMessage('ai', "Provisioning sequence completed. Signal refreshed at MNO carrier level. Please toggle your Airplane Mode to download the new cell profile.");
+            addMessage('ai', "Your line refresh completed. MNO routing nodes updated. Try toggling your device's Airplane Mode off and on to download the new tower attachments.");
           }, 800);
           return 100;
         }
@@ -117,7 +117,7 @@ export default function AISupportPreview() {
       setOtpVerified(true);
       setMessages(current => current.map(m => m.id === msgId ? { ...m, actionCard: { type: 'otp', status: 'success' } } : m));
       setTimeout(() => {
-        addMessage('ai', "Security clearance approved. Your eSIM transfer token is ready. Go ahead and scan the code under /esim or wait for a push activation request.");
+        addMessage('ai', "Identity verified. Your eSIM transfer is ready. You can scan the QR code under the eSIM view or accept the system push request.");
       }, 800);
     } else {
       alert("Please enter a 4-digit code (e.g. 1904) to simulate authentication.");
@@ -151,7 +151,7 @@ export default function AISupportPreview() {
     setMessages(current => current.map(m => m.id === msgId ? { ...m, actionCard: { type: 'escalation', status: 'success' } } : m));
     
     setTimeout(() => {
-      addMessage('ai', `Diagnostic bundle compiled and sent. Ticket #${ticketId} created. An administrator has been notified. You can view the ticketing queue under the Operations portal /admin.`);
+      addMessage('ai', `Diagnostic bundle compiled. Ticket #${ticketId} created. An administrator has been notified. You can track this in the operations logs.`);
     }, 800);
   };
 
@@ -243,7 +243,7 @@ export default function AISupportPreview() {
                   {
                     id: '1',
                     sender: 'ai',
-                    text: "Hey! I'm Packie support AI. I have full system access to refresh lines, explain billing anomalies, configure APNs, and process SIM swaps. How can I help you today?",
+                    text: "Hey. I'm Packie. I have direct access to our core routing systems, which means I can reprovision lines, swap eSIM profiles, and diagnose cell tower attachments. No flowcharts or canned loops. What's going on with your device?",
                     timestamp: '10:02 AM'
                   }
                 ])}

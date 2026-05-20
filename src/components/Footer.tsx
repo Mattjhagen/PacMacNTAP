@@ -1,4 +1,5 @@
 import React from 'react';
+import { Link } from 'react-router-dom';
 import { Shield, Eye, Lock, Globe } from 'lucide-react';
 
 export default function Footer() {
@@ -28,9 +29,11 @@ export default function Footer() {
         </div>
 
         {/* Copyright, legal, domain details */}
-        <div className="flex flex-col sm:flex-row items-center justify-between gap-6 pt-8 text-[11px] font-mono text-brand-gray-500">
+        <div className="flex flex-col sm:flex-row items-center justify-between gap-6 pt-8 text-[11px] font-mono text-brand-gray-550">
           <div className="flex flex-wrap justify-center sm:justify-start gap-4 sm:gap-6">
             <span>© {currentYear} PacMac Mobile. All rights reserved.</span>
+            <span className="text-brand-gray-700">|</span>
+            <Link to="/admin" className="text-brand-gray-500 hover:text-white transition-colors cursor-pointer">[ Console ]</Link>
             <span className="text-brand-gray-700">|</span>
             <span className="text-brand-gray-500">pacmacmobile.com</span>
           </div>

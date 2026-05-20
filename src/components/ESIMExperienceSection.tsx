@@ -91,7 +91,7 @@ export default function ESIMExperienceSection() {
             </h1>
 
             <p className="text-sm md:text-base text-brand-gray-400 font-sans font-light leading-relaxed">
-              Physical SIM cards are entering their fax machine and floppy disk era. With eSIM, your connection is 100% digital. No shipping delays, no awkward needle ejector tools, no store waiting lines. You could literally switch carriers while waiting for coffee.
+              Physical SIM cards are entering their fax machine and floppy disk era. With eSIM, your connection is 100% digital. No shipping delays, no searching for a paperclip to poke into your phone, and no waiting in fluorescent carrier stores. You could literally switch carriers during your lunch break.
             </p>
 
             <div className="grid grid-cols-1 gap-4 pt-4">

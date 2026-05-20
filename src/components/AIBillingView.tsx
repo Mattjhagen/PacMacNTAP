@@ -26,10 +26,10 @@ export default function AIBillingView() {
             <div className="h-[1px] w-12 bg-brand-gray-800" />
           </div>
           <h1 className="font-display text-4xl md:text-6xl font-medium tracking-tight text-white leading-tight">
-            Your phone bill. <br />Adapting to you.
+            A bill that shrinks <br />when you touch grass.
           </h1>
           <p className="text-sm md:text-base text-brand-gray-400 font-sans font-light leading-relaxed">
-            We analyze your streaming, hotspot, and data peaks to dynamically optimize allocations. You only pay for what you actually use.
+            Most carriers make you choose between overpaying "just in case" or running out early. PacMac adjusts your billing brackets automatically. You use less? You pay less. Simple.
           </p>
         </div>
 
@@ -39,11 +39,11 @@ export default function AIBillingView() {
           <div className="lg:col-span-8 border border-white/10 bg-white/[0.01] rounded-2xl p-6 md:p-8 backdrop-blur-md text-left space-y-6">
             <div className="flex items-center justify-between border-b border-white/10 pb-6">
               <div className="space-y-1">
-                <span className="font-mono text-[9px] text-brand-gray-500 uppercase">ACTIVE ACCOUNT BLOCK</span>
+                <span className="font-mono text-[9px] text-brand-gray-550 uppercase">ACTIVE ACCOUNT BLOCK</span>
                 <h3 className="font-display text-lg font-bold text-white">Invoice #PAC-BILL-9402</h3>
               </div>
               <div className="text-right">
-                <span className="font-mono text-[9px] text-brand-gray-500 uppercase block">BILLING PERIOD</span>
+                <span className="font-mono text-[9px] text-brand-gray-550 uppercase block">BILLING PERIOD</span>
                 <span className="text-xs font-mono text-white block mt-0.5">MAY 01 - MAY 31, 2026</span>
               </div>
             </div>
@@ -65,7 +65,7 @@ export default function AIBillingView() {
               <div className="flex justify-between py-2 border-b border-white/5 text-emerald-400">
                 <span className="flex items-center gap-1.5">
                   <Sparkles className="w-3.5 h-3.5" />
-                  Adaptive Usage Refund (Unused Data Credits)
+                  Adaptive Usage Adjustment (Unused Capacity Credits)
                 </span>
                 <span>-$7.42</span>
               </div>
@@ -82,7 +82,7 @@ export default function AIBillingView() {
               <div className="space-y-1">
                 <h4 className="font-display text-xs font-semibold text-white">AI Billing Insights</h4>
                 <p className="text-[11px] text-brand-gray-400 font-light leading-relaxed">
-                  "You saved $7.42 this month because your streaming activity peaked only during weekend home-Wi-Fi slots. Our system automatically adjusted your cellular profile to prevent over-allocation. Your data threshold recommendation remains locked on the 10GB scale."
+                  "You saved $7.42 because you spent three days in the woods without cell reception. Instead of billing you for data you didn't touch, our system automatically scaled back your allocation bracket. Your recommended data tier remains Standard Adaptive."
                 </p>
               </div>
             </div>

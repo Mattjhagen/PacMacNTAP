@@ -4,7 +4,7 @@ import HeroSection from './HeroSection';
 import WhatIsPacMac from './WhatIsPacMac';
 import ComingSoonSection from './ComingSoonSection';
 import WaitlistSection from './WaitlistSection';
-import { ArrowRight, Smartphone, Cpu, QrCode, Sparkles, Shield, Receipt } from 'lucide-react';
+import { ArrowRight, Smartphone, Cpu, QrCode, Sparkles, Shield, Lock } from 'lucide-react';
 
 export default function HomeView() {
   return (
@@ -127,22 +127,29 @@ export default function HomeView() {
               </Link>
             </div>
 
-            {/* Admin Console */}
+            {/* Mesh Messenger */}
             <div className="border border-white/10 bg-white/[0.01] rounded-2xl p-6 flex flex-col justify-between hover:border-white/20 transition-all group text-left">
               <div className="space-y-4">
-                <Receipt className="w-6 h-6 text-white" />
-                <h3 className="font-display text-lg font-bold text-white">Admin Operations Portal</h3>
+                <Lock className="w-6 h-6 text-white" />
+                <div className="space-y-1">
+                  <h3 className="font-display text-lg font-bold text-white">Mesh Messenger</h3>
+                  <span className="font-mono text-[9px] text-brand-gray-550 uppercase tracking-widest block">
+                    Private messaging. Coming soon.
+                  </span>
+                </div>
                 <p className="text-xs text-brand-gray-400 font-light leading-relaxed">
-                  "Futuristic carrier control room." Live order trackers, SIM provision tickers, active AI support ticket queues, and telemetry logs.
+                  End-to-end encrypted messaging for people who miss when the internet felt a little more private. Built for members, not advertisers.
                 </p>
               </div>
-              <Link
-                to="/admin"
-                className="mt-6 font-mono text-[10px] text-white flex items-center gap-1.5 hover:underline"
+              <a
+                href="https://github.com/Mattjhagen/mesh-messenger"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="mt-6 font-mono text-[10px] text-white flex items-center gap-1.5 hover:underline cursor-pointer"
               >
-                Launch Admin Telemetry
+                View Repository
                 <ArrowRight className="w-3.5 h-3.5 transition-transform group-hover:translate-x-1" />
-              </Link>
+              </a>
             </div>
 
           </div>

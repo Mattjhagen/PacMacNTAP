@@ -1,106 +1,97 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
-import { Activity, TrendingUp, Sparkles, Receipt, EyeOff, ShieldCheck, Heart, ArrowRight } from 'lucide-react';
+import { Check, ShieldCheck, HelpCircle, ArrowRight, Sparkles, AlertCircle, RefreshCw } from 'lucide-react';
 
-interface CardItem {
-  id: string;
-  title: string;
-  description: string;
-  icon: React.ReactNode;
-  examples: string[];
+interface CarrierConfig {
+  name: string;
+  price: number;
+  planLimit: number;
+  planName: string;
+  fearFactor: string;
 }
 
 export default function AdaptivePlansSection() {
-  const [activeHeadlineIdx, setActiveHeadlineIdx] = useState(0);
-  const [chaosSelection, setChaosSelection] = useState<string>('tiktok');
+  const [selectedCarrierKey, setSelectedCarrierKey] = useState<string>('verizon');
+  const [dataUsage, setDataUsage] = useState<number>(14);
+  const [activeMonthTab, setActiveMonthTab] = useState<number>(1);
+
+  const carriers: Record<string, CarrierConfig> = {
+    verizon: {
+      name: 'Verizon',
+      planName: 'Unlimited Plus',
+      price: 80,
+      planLimit: 80,
+      fearFactor: 'Overpaying for safety nets you never hit.'
+    },
+    att: {
+      name: 'AT&T',
+      planName: 'Premium PL',
+      price: 85,
+      planLimit: 100,
+      fearFactor: 'Fear of overage fees locks you into the highest tier.'
+    },
+    tmobile: {
+      name: 'T-Mobile',
+      planName: 'Go5G Next',
+      price: 95,
+      planLimit: 120,
+      fearFactor: 'Paying for extra entertainment bundles you rarely use.'
+    },
+    prepaid: {
+      name: 'Legacy Prepaid',
+      planName: 'Fixed Starter',
+      price: 45,
+      planLimit: 15,
+      fearFactor: 'Throttled to unusable speeds if you go over by 1 MB.'
+    }
+  };
+
+  const currentCarrier = carriers[selectedCarrierKey];
+
+  // PacMac Billing Brackets:
+  // - <= 5GB: $20 (Starter)
+  // - <= 15GB: $30 (Standard)
+  // - <= 30GB: $38 (Pro)
+  // - > 30GB: $45 (Unlimited)
+  const getPacMacTier = (gb: number) => {
+    if (gb <= 5) return { name: 'Starter', price: 20, limit: 5 };
+    if (gb <= 15) return { name: 'Standard', price: 30, limit: 15 };
+    if (gb <= 30) return { name: 'Pro', price: 38, limit: 30 };
+    return { name: 'Unlimited', price: 45, limit: 80 };
+  };
+
+  const pacMacTier = getPacMacTier(dataUsage);
   
-  const rotatingHeadlines = [
-    "Like Progressive Snapshot, but for your phone bill.",
-    "AI-powered mobile plans that adapt to your actual habits.",
-    "Your current carrier sees usage. Ours tries to help.",
-    "Finally, a phone bill with situational awareness."
-  ];
+  // Calculations
+  const wastedData = Math.max(0, currentCarrier.planLimit - dataUsage);
+  const monthlySavings = currentCarrier.price - pacMacTier.price;
+  const annualSavings = monthlySavings * 12;
 
-  useEffect(() => {
-    const timer = setInterval(() => {
-      setActiveHeadlineIdx((prev) => (prev + 1) % rotatingHeadlines.length);
-    }, 5000);
-    return () => clearInterval(timer);
-  }, []);
-
-  const cards: CardItem[] = [
+  // Monthly scenarios for the prediction modeler
+  const scenarios = [
     {
-      id: 'learning',
-      title: 'Usage Learning',
-      description: 'Learns which apps and services you actually use most.',
-      icon: <Activity className="w-5 h-5 text-white" />,
-      examples: [
-        "Yes, the AI noticed your 11-hour TikTok session.",
-        "Streaming usage detected. Again.",
-        "Probably too much YouTube."
-      ]
+      monthNum: 1,
+      label: 'Month 1: Home Wi-Fi Heavy',
+      usage: 4,
+      context: 'You stayed on home Wi-Fi during vacation. PacMac billing dropped you to the $20 Starter Tier. Your legacy carrier charged you full price.'
     },
     {
-      id: 'predictions',
-      title: 'Smart Predictions',
-      description: 'Estimates next month’s usage before your bill becomes emotionally upsetting.',
-      icon: <TrendingUp className="w-5 h-5 text-white" />,
-      examples: [
-        "AI predicts you’ll continue watching conspiracy documentaries at dangerous levels.",
-        "Your current carrier would have charged you first and explained later."
-      ]
+      monthNum: 2,
+      label: 'Month 2: Travel Season',
+      usage: 32,
+      context: 'You streamed videos on the highway. PacMac automatically scaled you to the $45 Unlimited Tier. No throttling or penalties.'
     },
     {
-      id: 'optimization',
-      title: 'Adaptive Optimization',
-      description: 'Suggests smarter data configurations automatically.',
-      icon: <Sparkles className="w-5 h-5 text-white" />,
-      examples: [
-        "Your hotspot usage suggests you don’t trust public Wi-Fi. Fair.",
-        "Usage spike detected after midnight. We’re not asking questions."
-      ]
-    },
-    {
-      id: 'billing',
-      title: 'AI Billing',
-      description: 'Explains your charges like a normal human instead of an ancient telecom wizard.',
-      icon: <Receipt className="w-5 h-5 text-white" />,
-      examples: [
-        "0.00kb data padding fees. Because we don't cheat.",
-        "Transparent breakdowns. Zero corporate marketing filler."
-      ]
+      monthNum: 3,
+      label: 'Month 3: Standard Office Month',
+      usage: 12,
+      context: 'Typical work commute. PacMac placed you in the $30 Standard Tier. Your billing adapted automatically.'
     }
   ];
 
-  const reassuringMessages = [
-    "Optional. Transparent. Not weird.",
-    "You control what gets analyzed.",
-    "Designed to optimize plans, not sell your life story.",
-    "Less surveillance capitalism. More useful math.",
-    "The goal is fewer surprises, not more ads."
-  ];
-
-  const chaosResponses: Record<string, { title: string; analysis: string; optimization: string }> = {
-    tiktok: {
-      title: "Vertical Video Vortex",
-      analysis: "We detected continuous high-bandwidth video packets looping from vertical social media channels for 9 hours straight.",
-      optimization: "Recommendation: Activate 'Social Autopilot'. We'll adjust your data cap dynamically and queue low-priority data. Also: Stand up, stretch your neck, and look at a real tree."
-    },
-    conspiracy: {
-      title: "Late-Night Rabbit Hole",
-      analysis: "Significant data spike detected between 1:00 AM and 4:30 AM. Video streams loaded in high definition.",
-      optimization: "Recommendation: Auto-enable 'Sleep Mode' buffering limit. Also: The moon landing was real, sleep cycles are important, put the phone down."
-    },
-    hotspot: {
-      title: "Paranoid Tethering",
-      analysis: "Frequent hotspot sessions initiated in various public coffee shops. Your laptop, tablet, and smart watch are tethered simultaneously.",
-      optimization: "Recommendation: Transition to 'Secure Tether Pass'. Also: We know public Wi-Fi is scary, but you don't need to tether everything at once."
-    },
-    gaming: {
-      title: "3 AM Ranked Lobby",
-      analysis: "Low-bandwidth, high-frequency packets and ultra-low latency packets active until dawn.",
-      optimization: "Recommendation: Prioritize low-latency game packets. Also: Drink a glass of water, your guild can survive without you for one night."
-    }
+  const handleApplyScenario = (usage: number, monthNum: number) => {
+    setDataUsage(usage);
+    setActiveMonthTab(monthNum);
   };
 
   const handleScrollToWaitlist = () => {
@@ -121,258 +112,244 @@ export default function AdaptivePlansSection() {
       <div className="absolute left-[8%] top-0 bottom-0 w-[1px] bg-white/[0.03] hidden lg:block" />
       <div className="absolute right-[8%] top-0 bottom-0 w-[1px] bg-white/[0.03] hidden lg:block" />
 
-      {/* Background visual indicators */}
-      <div className="absolute left-1/4 top-1/3 w-[600px] h-[600px] rounded-full bg-white/[0.008] blur-3xl pointer-events-none" />
+      {/* Subtle light glow */}
+      <div className="absolute left-1/3 top-1/4 w-[600px] h-[600px] rounded-full bg-white/[0.006] blur-3xl pointer-events-none" />
 
-      <div className="max-w-7xl mx-auto relative z-10">
+      <div className="max-w-7xl mx-auto relative z-10 space-y-16">
         
-        {/* Section Header */}
-        <div className="text-center max-w-3xl mx-auto mb-20 space-y-4">
-          <div className="flex items-center justify-center gap-3">
-            <span className="font-mono text-xs text-brand-gray-500 uppercase tracking-widest">
-              05 // ADAPTIVE AI PLANS
+        {/* Header Block */}
+        <div className="text-left space-y-4 max-w-xl">
+          <div className="flex items-center gap-3">
+            <span className="font-mono text-xs text-brand-gray-550 uppercase tracking-widest">
+              05 // ADAPTIVE WIRELESS
             </span>
             <div className="h-[1px] w-12 bg-brand-gray-800" />
           </div>
           
-          <h2 className="font-display text-3xl md:text-5xl font-medium tracking-tight text-white leading-tight">
-            Your phone plan should probably <br />
-            know you stream too much.
-          </h2>
+          <h1 className="font-display text-4xl md:text-6xl font-medium tracking-tight text-white leading-tight">
+            Your bill adjusts. <br />Not your lifestyle.
+          </h1>
 
-          <p className="text-sm md:text-base text-brand-gray-400 font-sans font-light leading-relaxed max-w-2xl mx-auto">
-            PacMac Adaptive AI Plans learn your usage patterns and help optimize your bill before your carrier would normally surprise you with it.
+          <p className="text-sm md:text-base text-brand-gray-400 font-sans font-light leading-relaxed">
+            Legacy carriers profit when you buy more than you need. PacMac uses localized system intelligence to adjust your billing bracket automatically based on what you actually consume.
           </p>
-
-          {/* Rotating subheadlines */}
-          <div className="h-6 overflow-hidden flex items-center justify-center pt-2">
-            <AnimatePresence mode="wait">
-              <motion.p
-                key={activeHeadlineIdx}
-                initial={{ opacity: 0, y: 10 }}
-                animate={{ opacity: 1, y: 0 }}
-                exit={{ opacity: 0, y: -10 }}
-                transition={{ duration: 0.3 }}
-                className="font-mono text-xs text-brand-gray-450 tracking-wide"
-              >
-                “{rotatingHeadlines[activeHeadlineIdx]}”
-              </motion.p>
-            </AnimatePresence>
-          </div>
         </div>
 
-        {/* 4 Feature Cards */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-20">
-          {cards.map((card) => (
-            <div
-              key={card.id}
-              className="rounded-2xl border border-white/10 bg-white/[0.01] p-6 backdrop-blur-md flex flex-col justify-between hover:border-white/20 transition-all duration-300 group"
-            >
-              <div className="space-y-6">
-                <div className="w-10 h-10 rounded-xl border border-white/10 bg-white/5 flex items-center justify-center text-white">
-                  {card.icon}
-                </div>
-                <div className="space-y-2 text-left">
-                  <h3 className="font-display text-lg font-semibold tracking-tight text-white">
-                    {card.title}
-                  </h3>
-                  <p className="text-xs text-brand-gray-400 font-light leading-relaxed">
-                    {card.description}
-                  </p>
-                </div>
-              </div>
-
-              {/* Cycling dynamic logs panel on hover/focus */}
-              <div className="mt-6 pt-4 border-t border-white/5 space-y-2 text-left">
-                <span className="font-mono text-[9px] text-brand-gray-550 uppercase tracking-widest block">
-                  Simulated Log Input:
-                </span>
-                <div className="bg-black/50 border border-white/5 rounded-lg p-2.5 font-mono text-[10px] text-brand-gray-300 min-h-[50px] flex items-center">
-                  <span className="animate-pulse mr-1.5 text-white">•</span>
-                  <span>{card.examples[0]}</span>
-                </div>
-              </div>
-            </div>
-          ))}
-        </div>
-
-        {/* Reassuring / Privacy Panel */}
-        <div className="border border-white/5 bg-white/[0.005] rounded-2xl p-6 md:p-8 backdrop-blur-sm mb-20">
-          <div className="flex flex-col md:flex-row items-center justify-between gap-6">
-            <div className="flex items-center gap-3 text-left">
-              <div className="w-10 h-10 rounded-full bg-white/5 border border-white/10 flex items-center justify-center text-brand-gray-300">
-                <EyeOff className="w-5 h-5" />
-              </div>
-              <div>
-                <h4 className="font-display text-sm font-semibold text-white">Designed to optimize, not spy.</h4>
-                <p className="text-xs text-brand-gray-400 font-light">We use localized math, not tracking databases.</p>
-              </div>
-            </div>
-            
-            <div className="flex flex-wrap items-center justify-center gap-3 md:gap-6">
-              {reassuringMessages.slice(0, 3).map((msg, i) => (
-                <div key={i} className="flex items-center gap-2 text-[10px] font-mono text-brand-gray-400 border border-white/10 rounded-full px-3 py-1 bg-white/[0.01]">
-                  <ShieldCheck className="w-3.5 h-3.5 text-white/50" />
-                  <span>{msg}</span>
-                </div>
-              ))}
-            </div>
-          </div>
-        </div>
-
-        {/* Playful Interactive Simulator */}
+        {/* Dynamic Simulator Cockpit */}
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-stretch">
           
-          {/* Simulator Selection (Left) */}
-          <div className="lg:col-span-5 flex flex-col justify-between border border-white/10 bg-white/[0.01] rounded-2xl p-6 md:p-8 text-left space-y-8">
+          {/* Simulator Controls & Calculations (Left) */}
+          <div className="lg:col-span-7 border border-white/10 bg-white/[0.01] rounded-3xl p-6 md:p-8 backdrop-blur-md text-left flex flex-col justify-between space-y-8">
+            
+            {/* Step 1: Select Carrier */}
             <div className="space-y-4">
-              <div className="flex items-center gap-2 text-white">
-                <Heart className="w-4 h-4 text-white animate-pulse" />
-                <span className="font-mono text-xs uppercase tracking-widest text-brand-gray-500">
-                  Try it free for a month
+              <span className="font-mono text-[9px] text-brand-gray-550 uppercase tracking-wider block">
+                STEP 1: SELECT YOUR CURRENT CARRIER
+              </span>
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+                {Object.entries(carriers).map(([key, config]) => (
+                  <button
+                    key={key}
+                    onClick={() => setSelectedCarrierKey(key)}
+                    className={`py-3 px-4 border rounded-xl font-display text-xs font-semibold text-center transition-all cursor-pointer ${
+                      selectedCarrierKey === key
+                        ? 'border-white bg-white text-black'
+                        : 'border-white/15 bg-transparent text-brand-gray-400 hover:border-white/30 hover:text-white'
+                    }`}
+                  >
+                    {config.name}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            {/* Step 2: Slider */}
+            <div className="space-y-4">
+              <div className="flex justify-between items-center">
+                <span className="font-mono text-[9px] text-brand-gray-550 uppercase tracking-wider">
+                  STEP 2: MODEL YOUR AVERAGE MONTHLY DATA USAGE
+                </span>
+                <span className="text-white font-mono text-sm font-bold bg-white/5 border border-white/10 px-2.5 py-1 rounded-lg">
+                  {dataUsage} GB
                 </span>
               </div>
-              <h3 className="font-display text-2xl font-bold tracking-tight text-white">
-                Analyze My Chaos
-              </h3>
+              
+              <div className="space-y-2">
+                <input
+                  type="range"
+                  min="1"
+                  max="60"
+                  step="1"
+                  value={dataUsage}
+                  onChange={(e) => setDataUsage(Number(e.target.value))}
+                  className="w-full h-1 bg-white/10 rounded-lg appearance-none cursor-pointer accent-white"
+                />
+                <div className="flex justify-between font-mono text-[8px] text-brand-gray-500">
+                  <span>1 GB</span>
+                  <span>15 GB (Prepaid Limit)</span>
+                  <span>30 GB</span>
+                  <span>60 GB</span>
+                </div>
+              </div>
+            </div>
+
+            {/* Step 3: Emotional Realization Block */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 border-t border-white/5 pt-6">
+              <div className="p-4 border border-white/10 bg-black/60 rounded-2xl flex flex-col justify-between">
+                <div>
+                  <span className="font-mono text-[8px] text-brand-gray-550 uppercase block">LEGACY CARRIER</span>
+                  <span className="font-display text-xl font-bold text-white mt-1 block">
+                    {currentCarrier.name} {currentCarrier.planName}
+                  </span>
+                  <p className="text-[10px] text-brand-gray-400 mt-2 font-light leading-relaxed">
+                    You pay a fixed <span className="text-white font-medium">${currentCarrier.price}</span> to get {currentCarrier.planLimit}GB. {currentCarrier.fearFactor}
+                  </p>
+                </div>
+                <div className="mt-4 border-t border-white/5 pt-3 flex justify-between font-mono text-[9px]">
+                  <span className="text-brand-gray-500">Unused Capacity:</span>
+                  <span className="text-red-400 font-bold">{wastedData} GB wasted</span>
+                </div>
+              </div>
+
+              <div className="p-4 border border-white/15 bg-white/[0.02] rounded-2xl flex flex-col justify-between relative overflow-hidden">
+                <div className="absolute top-0 right-0 p-2 text-emerald-400/20">
+                  <Sparkles className="w-8 h-8" />
+                </div>
+                <div>
+                  <span className="font-mono text-[8px] text-emerald-400 uppercase block">PACMAC ADAPTIVE BILLING</span>
+                  <span className="font-display text-xl font-bold text-white mt-1 block">
+                    {pacMacTier.name} Tier
+                  </span>
+                  <p className="text-[10px] text-brand-gray-300 mt-2 font-light leading-relaxed">
+                    PacMac automatically matched you to our <span className="text-white font-medium">${pacMacTier.price}</span> bracket because you used {dataUsage}GB. No wasted spend.
+                  </p>
+                </div>
+                <div className="mt-4 border-t border-white/5 pt-3 flex justify-between font-mono text-[9px]">
+                  <span className="text-brand-gray-400">Monthly Savings:</span>
+                  <span className="text-emerald-400 font-bold">${monthlySavings} saved</span>
+                </div>
+              </div>
+            </div>
+
+            {/* Savings Counter */}
+            <div className="p-5 border border-white/15 bg-white/[0.01] rounded-2xl flex flex-col md:flex-row items-center justify-between gap-4">
+              <div className="text-left">
+                <span className="font-mono text-[9px] text-brand-gray-500 uppercase block">ESTIMATED ANNUAL MEMBERSHIP REBATE</span>
+                <span className="font-display text-3xl font-bold text-white mt-1 block">
+                  ${annualSavings} / year back in your pocket
+                </span>
+              </div>
+              <button
+                onClick={handleScrollToWaitlist}
+                className="py-3 px-6 text-xs font-semibold text-black bg-white hover:bg-brand-gray-150 rounded-xl transition-all cursor-pointer shrink-0"
+              >
+                Get Early Invitation
+              </button>
+            </div>
+
+          </div>
+
+          {/* Monthly Behavior Modeler Sequence (Right) */}
+          <div className="lg:col-span-5 border border-white/10 bg-black/80 rounded-3xl p-6 md:p-8 text-left flex flex-col justify-between space-y-6">
+            <div className="space-y-4">
+              <div>
+                <span className="font-mono text-[9px] text-brand-gray-550 uppercase tracking-widest block">ADAPTIVE FORECASTING</span>
+                <h3 className="font-display text-lg font-bold text-white mt-1">Month-to-Month Behavior</h3>
+              </div>
               <p className="text-xs text-brand-gray-400 font-light leading-relaxed">
-                Let the AI learn your usage habits before making recommendations. Worst case scenario: it discovers you spend too much time on YouTube.
+                Click any of the scenarios below to model how PacMac automatically handles fluctuations in your digital behavior cycle.
               </p>
             </div>
 
-            {/* Interactive selection buttons */}
+            {/* Month Scenarios Tabs */}
             <div className="space-y-3">
-              <span className="font-mono text-[9px] text-brand-gray-550 uppercase tracking-widest block">
-                Select your mobile vice:
-              </span>
-              <div className="grid grid-cols-2 gap-2.5">
+              {scenarios.map((sc) => (
                 <button
-                  onClick={() => setChaosSelection('tiktok')}
-                  className={`py-2 px-3.5 rounded-xl border text-[11px] font-mono text-center transition-all cursor-pointer ${
-                    chaosSelection === 'tiktok'
-                      ? 'border-white text-black bg-white'
-                      : 'border-white/10 text-brand-gray-300 hover:border-white/30 bg-transparent'
+                  key={sc.monthNum}
+                  onClick={() => handleApplyScenario(sc.usage, sc.monthNum)}
+                  className={`w-full p-4 border rounded-2xl transition-all text-left block cursor-pointer ${
+                    activeMonthTab === sc.monthNum
+                      ? 'border-white bg-white/[0.03]'
+                      : 'border-white/5 bg-transparent hover:border-white/10'
                   }`}
                 >
-                  Late-Night TikTok
+                  <div className="flex justify-between items-center">
+                    <span className="font-display text-xs font-semibold text-white">{sc.label}</span>
+                    <span className="font-mono text-[10px] text-brand-gray-400">{sc.usage} GB used</span>
+                  </div>
+                  {activeMonthTab === sc.monthNum && (
+                    <motion.p
+                      initial={{ opacity: 0, height: 0 }}
+                      animate={{ opacity: 1, height: 'auto' }}
+                      className="text-[10px] text-brand-gray-400 mt-2 font-sans font-light leading-relaxed border-t border-white/5 pt-2"
+                    >
+                      {sc.context}
+                    </motion.p>
+                  )}
                 </button>
-                <button
-                  onClick={() => setChaosSelection('conspiracy')}
-                  className={`py-2 px-3.5 rounded-xl border text-[11px] font-mono text-center transition-all cursor-pointer ${
-                    chaosSelection === 'conspiracy'
-                      ? 'border-white text-black bg-white'
-                      : 'border-white/10 text-brand-gray-300 hover:border-white/30 bg-transparent'
-                  }`}
-                >
-                  Conspiracy Vids
-                </button>
-                <button
-                  onClick={() => setChaosSelection('hotspot')}
-                  className={`py-2 px-3.5 rounded-xl border text-[11px] font-mono text-center transition-all cursor-pointer ${
-                    chaosSelection === 'hotspot'
-                      ? 'border-white text-black bg-white'
-                      : 'border-white/10 text-brand-gray-300 hover:border-white/30 bg-transparent'
-                  }`}
-                >
-                  Coffee Shop Tether
-                </button>
-                <button
-                  onClick={() => setChaosSelection('gaming')}
-                  className={`py-2 px-3.5 rounded-xl border text-[11px] font-mono text-center transition-all cursor-pointer ${
-                    chaosSelection === 'gaming'
-                      ? 'border-white text-black bg-white'
-                      : 'border-white/10 text-brand-gray-300 hover:border-white/30 bg-transparent'
-                  }`}
-                >
-                  3 AM Gaming
-                </button>
-              </div>
+              ))}
             </div>
 
-            {/* Playful CTAs that scroll to Waitlist */}
-            <div className="space-y-3 pt-4 border-t border-white/5">
-              <button
-                onClick={handleScrollToWaitlist}
-                className="w-full py-3 text-center text-xs font-semibold text-black bg-white rounded-xl transition-all shadow-[0_0_15px_rgba(255,255,255,0.1)] hover:shadow-[0_0_20px_rgba(255,255,255,0.25)] flex items-center justify-center gap-2 cursor-pointer"
-              >
-                Let The AI Judge Me
-                <ArrowRight className="w-3.5 h-3.5" />
-              </button>
-              
-              <div className="flex items-center justify-between text-[9px] font-mono text-brand-gray-500 px-1">
-                <button onClick={handleScrollToWaitlist} className="hover:text-white cursor-pointer bg-transparent border-none">
-                  [ Fine. Optimize Me. ]
-                </button>
-                <button onClick={handleScrollToWaitlist} className="hover:text-white cursor-pointer bg-transparent border-none">
-                  [ Teach The Robot ]
-                </button>
+            {/* Behind the Curtain: How pricing works */}
+            <div className="p-4 border border-white/5 bg-white/[0.01] rounded-2xl space-y-2">
+              <span className="font-mono text-[9px] text-brand-gray-500 uppercase block">HOW PACMAC BRACKETS OPERATE</span>
+              <p className="text-[10px] text-brand-gray-400 leading-relaxed font-sans font-light">
+                We place you into brackets retrospectively at the end of each billing cycle: $20 (5GB), $30 (15GB), $38 (30GB), or $45 (Unlimited). No complex formulas. Just predictable logic that has your back.
+              </p>
+            </div>
+
+          </div>
+
+        </div>
+
+        {/* Legacy vs. PacMac Contrast Matrix */}
+        <div className="space-y-6 pt-12 border-t border-white/5">
+          <div className="text-left">
+            <span className="font-mono text-xs text-brand-gray-550 uppercase tracking-widest">COMPARISON MATRIX</span>
+            <h2 className="font-display text-2xl font-bold text-white mt-1">
+              Structural differences.
+            </h2>
+          </div>
+
+          <div className="border border-white/10 bg-white/[0.01] rounded-3xl overflow-hidden backdrop-blur-md">
+            <div className="grid grid-cols-3 border-b border-white/10 bg-white/[0.02] p-4 text-[10px] font-mono text-brand-gray-500 tracking-wider text-left">
+              <span>CRITERIA</span>
+              <span>LEGACY CARRIERS</span>
+              <span>PACMAC MOBILE</span>
+            </div>
+
+            <div className="divide-y divide-white/5 text-left text-xs font-sans">
+              <div className="grid grid-cols-3 p-4 items-center">
+                <span className="text-white font-medium">Unused Data</span>
+                <span className="text-brand-gray-400 font-light">Kept as pure profit by carrier</span>
+                <span className="text-emerald-400 font-medium">Automatically drops your bill</span>
+              </div>
+              <div className="grid grid-cols-3 p-4 items-center">
+                <span className="text-white font-medium">Plan Commitments</span>
+                <span className="text-brand-gray-400 font-light">36-month contracts / installment locks</span>
+                <span className="text-white font-light">Cancel or switch in two clicks</span>
+              </div>
+              <div className="grid grid-cols-3 p-4 items-center">
+                <span className="text-white font-medium">Pricing Predictability</span>
+                <span className="text-brand-gray-400 font-light">Unannounced mid-year rate hikes</span>
+                <span className="text-white font-light">Flat bracket pricing, forever locked</span>
+              </div>
+              <div className="grid grid-cols-3 p-4 items-center">
+                <span className="text-white font-medium">Support Resolution</span>
+                <span className="text-brand-gray-400 font-light">Flowcharts and call centers</span>
+                <span className="text-white font-light">Competent systems-access AI co-pilots</span>
               </div>
             </div>
           </div>
+        </div>
 
-          {/* Simulator Console Screen (Right) */}
-          <div className="lg:col-span-7 flex flex-col justify-between border border-white/10 bg-black/80 rounded-2xl overflow-hidden font-mono text-xs relative select-none min-h-[300px]">
-            {/* Console Header */}
-            <div className="border-b border-white/10 bg-white/[0.02] py-3.5 px-5 flex items-center justify-between">
-              <div className="flex items-center gap-1.5">
-                <div className="w-2.5 h-2.5 rounded-full bg-red-500/50" />
-                <div className="w-2.5 h-2.5 rounded-full bg-yellow-500/50" />
-                <div className="w-2.5 h-2.5 rounded-full bg-green-500/50" />
-              </div>
-              <span className="text-[10px] text-brand-gray-500 uppercase tracking-widest">
-                ADAPTIVE DATA OPTIMIZER V1.0.4
-              </span>
-              <div className="w-4 h-4 rounded bg-white/5" />
-            </div>
-
-            {/* Console Body */}
-            <div className="p-6 md:p-8 space-y-6 text-left flex-1 flex flex-col justify-center">
-              <AnimatePresence mode="wait">
-                <motion.div
-                  key={chaosSelection}
-                  initial={{ opacity: 0, x: 20 }}
-                  animate={{ opacity: 1, x: 0 }}
-                  exit={{ opacity: 0, x: -20 }}
-                  transition={{ duration: 0.3 }}
-                  className="space-y-4"
-                >
-                  <div className="space-y-1">
-                    <span className="text-brand-gray-550 text-[10px] tracking-wider uppercase block">
-                      Detected Profile:
-                    </span>
-                    <span className="text-white text-base font-semibold font-display">
-                      {chaosResponses[chaosSelection].title}
-                    </span>
-                  </div>
-
-                  <div className="space-y-1">
-                    <span className="text-brand-gray-550 text-[10px] tracking-wider uppercase block">
-                      Usage Pattern Analysis:
-                    </span>
-                    <p className="text-brand-gray-300 font-light leading-relaxed">
-                      {chaosResponses[chaosSelection].analysis}
-                    </p>
-                  </div>
-
-                  <div className="space-y-1 bg-white/[0.02] border border-white/5 rounded-xl p-4">
-                    <span className="text-white text-[10px] font-bold tracking-wider uppercase block mb-1">
-                      Adaptive Optimization:
-                    </span>
-                    <p className="text-white/80 font-light leading-relaxed">
-                      {chaosResponses[chaosSelection].optimization}
-                    </p>
-                  </div>
-                </motion.div>
-              </AnimatePresence>
-            </div>
-
-            {/* Console Footer */}
-            <div className="border-t border-white/5 py-3 px-5 text-[9px] text-brand-gray-550 flex items-center justify-between uppercase">
-              <span>Status: Listening...</span>
-              <span>Memory: 12.4 MB</span>
-            </div>
+        {/* Privacy & Invitation Disclaimers */}
+        <div className="flex flex-col sm:flex-row items-center justify-between gap-6 border-t border-white/5 pt-8 text-[10px] font-mono text-brand-gray-550">
+          <div className="flex items-center gap-2">
+            <ShieldCheck className="w-4 h-4 text-brand-gray-500" />
+            <span>Still rolling out quietly. Early access remains limited.</span>
           </div>
-
+          <span>Some people already switched. They’ve been weirdly smug about it.</span>
         </div>
 
       </div>

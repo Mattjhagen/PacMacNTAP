@@ -69,7 +69,7 @@ export default function HeroSection() {
           >
             <span className="w-2 h-2 rounded-full bg-white animate-pulse" />
             <span className="text-[10px] uppercase font-mono tracking-widest text-brand-gray-300">
-              INTRODUCING PACMAC WIRELESS
+              Still rolling out quietly // Early access
             </span>
           </motion.div>
 
@@ -78,9 +78,9 @@ export default function HeroSection() {
             variants={itemVariants}
             className="font-display text-4xl sm:text-6xl md:text-8xl font-medium tracking-tight leading-[1.05] text-white"
           >
-            Prepaid wireless <br />
+            Modern wireless <br />
             <span className="text-transparent bg-clip-text bg-gradient-to-b from-white via-white to-brand-gray-550 text-glow-sm">
-              for the AI generation.
+              for people with taste.
             </span>
           </motion.h1>
 
@@ -89,7 +89,7 @@ export default function HeroSection() {
             variants={itemVariants}
             className="mt-6 md:mt-8 text-base md:text-xl text-brand-gray-300 max-w-2xl leading-relaxed font-sans font-light"
           >
-            Buy a phone, bring your own device, or activate instantly with eSIM. PacMac Mobile combines modern prepaid service, AI-powered tools, and zero corporate telecom energy.
+            We’re rebuilding phone service with AI tools, adaptive billing, and significantly fewer headaches. No weird carrier store energy required.
           </motion.p>
 
           {/* Main Hero Call-to-Actions */}
@@ -101,7 +101,7 @@ export default function HeroSection() {
               onClick={() => handleScrollTo('#byop')}
               className="group relative w-full sm:w-56 py-3.5 text-center text-sm font-semibold text-black bg-white hover:bg-brand-gray-150 rounded-xl transition-all shadow-[0_0_20px_rgba(255,255,255,0.15)] hover:shadow-[0_0_30px_rgba(255,255,255,0.30)] flex items-center justify-center gap-2 cursor-pointer"
             >
-              Get Started (eSIM)
+              Escape Your Carrier
               <ChevronRight className="w-4 h-4 transition-transform group-hover:translate-x-1" />
             </button>
 
@@ -118,7 +118,7 @@ export default function HeroSection() {
             variants={itemVariants}
             className="mt-6 text-xs font-mono text-brand-gray-400 tracking-wider"
           >
-            Including PackieAI spam call protection.
+            Adaptive billing optimizes your line dynamically.
           </motion.p>
 
           {/* Slogan metadata bottom bar */}
@@ -128,27 +128,27 @@ export default function HeroSection() {
           >
             <div>
               <div className="font-mono text-[10px] uppercase text-brand-gray-550 tracking-wider">
-                Our Mission
+                Adaptive Wireless
               </div>
               <div className="text-xs md:text-sm font-light text-brand-gray-300 mt-1 flex items-center gap-1.5">
                 <span className="w-1.5 h-1.5 rounded-full bg-white" />
-                Connectivity for Everyone
+                You use less, you pay less.
               </div>
             </div>
             <div>
               <div className="font-mono text-[10px] uppercase text-brand-gray-550 tracking-wider">
-                Smart & Clean
+                Membership Focus
               </div>
               <div className="text-xs md:text-sm font-light text-brand-gray-300 mt-1">
-                Built-in Spam Protection
+                Feels less like a carrier. More like a membership.
               </div>
             </div>
             <div className="col-span-2 sm:col-span-1">
               <div className="font-mono text-[10px] uppercase text-brand-gray-550 tracking-wider">
-                Support First
+                Early Access
               </div>
               <div className="text-xs md:text-sm font-light text-brand-gray-300 mt-1">
-                Approachable, Human Help
+                Quietly becoming some people's favorite carrier.
               </div>
             </div>
           </motion.div>

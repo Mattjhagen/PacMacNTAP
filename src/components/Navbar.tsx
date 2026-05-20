@@ -78,13 +78,7 @@ export default function Navbar() {
 
           {/* Action buttons */}
           <div className="hidden md:flex items-center gap-3 font-mono">
-            <Link
-              to="/admin"
-              className="px-3.5 py-1.5 text-[10px] border border-white/10 hover:border-white/20 text-brand-gray-400 hover:text-white rounded-lg transition-all flex items-center gap-1.5"
-            >
-              <Terminal className="w-3.5 h-3.5" />
-              Admin Operations
-            </Link>
+
 
             <Link
               to="/byop"
@@ -126,14 +120,7 @@ export default function Navbar() {
                   {item.label}
                 </Link>
               ))}
-              <Link
-                to="/admin"
-                onClick={() => setIsOpen(false)}
-                className="text-base font-mono text-brand-gray-300 hover:text-white transition-colors border-b border-white/5 pb-2 block flex items-center gap-1.5"
-              >
-                <Terminal className="w-4 h-4" />
-                Admin Operations
-              </Link>
+
             </div>
 
             <div className="flex flex-col gap-4 mt-auto pb-12">
