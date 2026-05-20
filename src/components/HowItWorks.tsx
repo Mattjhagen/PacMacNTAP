@@ -78,7 +78,7 @@ export default function HowItWorks() {
           <div>
             <div className="flex items-center justify-center md:justify-start gap-3 mb-4">
               <span className="font-mono text-xs text-brand-gray-500 uppercase tracking-widest">
-                04 // SMART ADD-ON
+                02 // SMART ADD-ON
               </span>
               <div className="h-[1px] w-12 bg-brand-gray-800" />
             </div>

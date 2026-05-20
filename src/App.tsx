@@ -38,19 +38,20 @@ export default function App() {
         {/* WHAT PACMAC MOBILE IS BUILDING */}
         <WhatIsPacMac />
         
-        {/* LAUNCHING SOON SECTION - Dynamic Live Countdown */}
-        <ComingSoonSection />
-        
         {/* HOW IT WORKS SECTION - 3D Perspective Tilt Cards */}
         <HowItWorks />
         
         {/* LIVE INTERCEPT SCAM ACTIVITY SECTION - Terminal Stream and stats */}
         <LiveActivitySection />
         
+        {/* LAUNCHING SOON SECTION - Dynamic Live Countdown */}
+        <ComingSoonSection />
+        
         {/* EMAIL WAITLIST SECTION */}
         <WaitlistSection />
         
       </main>
+
 
       {/* Professional local footer */}
       <Footer />

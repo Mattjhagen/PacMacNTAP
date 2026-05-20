@@ -90,7 +90,7 @@ export default function WhatIsPacMac() {
           <div className="flex items-center justify-center gap-3">
             <div className="h-[1px] w-8 bg-brand-gray-800" />
             <span className="font-mono text-xs text-brand-gray-500 uppercase tracking-widest">
-              MISSION MATRIX
+              01 // MISSION MATRIX
             </span>
             <div className="h-[1px] w-8 bg-brand-gray-800" />
           </div>
