@@ -1,8 +1,33 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { motion } from 'motion/react';
 import { ChevronRight } from 'lucide-react';
 
+const HEADLINES = [
+  {
+    top: "Modern mobile service",
+    bottom: "built for real people."
+  },
+  {
+    top: "Honest cell service",
+    bottom: "minus the big carrier tax."
+  },
+  {
+    top: "Premium wireless",
+    bottom: "without the premium price."
+  },
+  {
+    top: "Finally, a phone service",
+    bottom: "that actually gets you."
+  },
+  {
+    top: "Smarter connectivity",
+    bottom: "for the whole community."
+  }
+];
+
 export default function HeroSection() {
+  const [headline] = useState(() => HEADLINES[Math.floor(Math.random() * HEADLINES.length)]);
+
   const handleScrollTo = (id: string) => {
     const element = document.querySelector(id);
     if (element) {
@@ -78,9 +103,9 @@ export default function HeroSection() {
             variants={itemVariants}
             className="font-display text-4xl sm:text-6xl md:text-8xl font-medium tracking-tight leading-[1.05] text-white"
           >
-            Modern mobile service <br />
+            {headline.top} <br />
             <span className="text-transparent bg-clip-text bg-gradient-to-b from-white via-white to-brand-gray-500 text-glow-sm">
-              built for real people.
+              {headline.bottom}
             </span>
           </motion.h1>
 
