@@ -21,7 +21,9 @@ export default function Navbar() {
     { label: 'Plans', to: '/plans' },
     { label: 'eSIM', to: '/esim' },
     { label: 'AI Billing', to: '/ai-billing' },
+    { label: 'PackieAI', to: '/packieai' },
     { label: 'Support AI', to: '/support' },
+    { label: 'Login', to: '/login' },
     { label: 'Dashboard', to: '/dashboard' },
   ];
 
@@ -51,7 +53,7 @@ export default function Navbar() {
           </Link>
 
           {/* Desktop Nav Items */}
-          <nav className="hidden xl:flex items-center gap-6">
+          <nav className="hidden xl:flex items-center gap-4">
             {menuItems.map((item) => (
               <NavLink
                 key={item.label}

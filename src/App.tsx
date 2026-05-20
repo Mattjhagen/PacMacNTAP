@@ -17,6 +17,8 @@ import AISupportPreview from './components/AISupportPreview';
 import CustomerDashboard from './components/CustomerDashboard';
 import CheckoutView from './components/CheckoutView';
 import AdminDashboardPreview from './components/AdminDashboardPreview';
+import PackieAIView from './components/PackieAIView';
+import LoginView from './components/LoginView';
 
 export default function App() {
   return (
@@ -52,7 +54,9 @@ export default function App() {
               <Route path="/esim" element={<ErrorBoundary><ESIMExperienceSection /></ErrorBoundary>} />
               <Route path="/plans" element={<ErrorBoundary><AdaptivePlansSection /></ErrorBoundary>} />
               <Route path="/ai-billing" element={<ErrorBoundary><AIBillingView /></ErrorBoundary>} />
+              <Route path="/packieai" element={<ErrorBoundary><PackieAIView /></ErrorBoundary>} />
               <Route path="/support" element={<ErrorBoundary><AISupportPreview /></ErrorBoundary>} />
+              <Route path="/login" element={<ErrorBoundary><LoginView /></ErrorBoundary>} />
               <Route path="/dashboard" element={<ErrorBoundary><CustomerDashboard /></ErrorBoundary>} />
               <Route path="/checkout" element={<ErrorBoundary><CheckoutView /></ErrorBoundary>} />
               <Route path="/admin" element={<ErrorBoundary><AdminDashboardPreview /></ErrorBoundary>} />
