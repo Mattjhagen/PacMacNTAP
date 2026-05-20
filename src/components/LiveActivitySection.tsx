@@ -111,7 +111,7 @@ export default function LiveActivitySection() {
           <div className="lg:col-span-5 space-y-6 text-left">
             <div className="flex items-center gap-3">
               <span className="font-mono text-xs text-brand-gray-500 uppercase tracking-widest">
-                07 // WATCH IT IN ACTION
+                05 // ASSISTANT IN ACTION
               </span>
               <div className="h-[1px] w-12 bg-brand-gray-800" />
             </div>
@@ -198,7 +198,7 @@ export default function LiveActivitySection() {
                       transition={{ duration: 0.25 }}
                       className="flex items-start gap-3"
                     >
-                      <span className="text-brand-gray-550 flex-shrink-0">[{log.timestamp}]</span>
+                      <span className="text-brand-gray-500 flex-shrink-0">[{log.timestamp}]</span>
                       <div className="flex-1">
                         <span
                           className={`font-semibold mr-1.5 ${

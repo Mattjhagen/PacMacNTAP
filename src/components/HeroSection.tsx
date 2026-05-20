@@ -69,7 +69,7 @@ export default function HeroSection() {
           >
             <span className="w-2 h-2 rounded-full bg-white animate-pulse" />
             <span className="text-[10px] uppercase font-mono tracking-widest text-brand-gray-300">
-              Still rolling out quietly // Early access
+              INTRODUCING PACMAC WIRELESS
             </span>
           </motion.div>
 
@@ -78,9 +78,9 @@ export default function HeroSection() {
             variants={itemVariants}
             className="font-display text-4xl sm:text-6xl md:text-8xl font-medium tracking-tight leading-[1.05] text-white"
           >
-            Modern wireless <br />
-            <span className="text-transparent bg-clip-text bg-gradient-to-b from-white via-white to-brand-gray-550 text-glow-sm">
-              for people with taste.
+            Modern mobile service <br />
+            <span className="text-transparent bg-clip-text bg-gradient-to-b from-white via-white to-brand-gray-500 text-glow-sm">
+              built for real people.
             </span>
           </motion.h1>
 
@@ -89,7 +89,7 @@ export default function HeroSection() {
             variants={itemVariants}
             className="mt-6 md:mt-8 text-base md:text-xl text-brand-gray-300 max-w-2xl leading-relaxed font-sans font-light"
           >
-            We’re rebuilding phone service with AI tools, adaptive billing, and significantly fewer headaches. No weird carrier store energy required.
+            PacMac Mobile combines affordable connectivity, modern technology, and community-first support into a simpler wireless experience.
           </motion.p>
 
           {/* Main Hero Call-to-Actions */}
@@ -98,18 +98,18 @@ export default function HeroSection() {
             className="mt-10 md:mt-12 flex flex-col sm:flex-row items-center gap-4 w-full sm:w-auto z-10"
           >
             <button
-              onClick={() => handleScrollTo('#byop')}
+              onClick={() => handleScrollTo('#coming-soon')}
               className="group relative w-full sm:w-56 py-3.5 text-center text-sm font-semibold text-black bg-white hover:bg-brand-gray-150 rounded-xl transition-all shadow-[0_0_20px_rgba(255,255,255,0.15)] hover:shadow-[0_0_30px_rgba(255,255,255,0.30)] flex items-center justify-center gap-2 cursor-pointer"
             >
-              Escape Your Carrier
+              Coming Soon
               <ChevronRight className="w-4 h-4 transition-transform group-hover:translate-x-1" />
             </button>
 
             <button
-              onClick={() => handleScrollTo('#phones')}
+              onClick={() => handleScrollTo('#pacmac-features')}
               className="w-full sm:w-56 py-3.5 text-center text-sm font-mono tracking-tight text-white border border-white/10 hover:border-white/40 rounded-xl hover:bg-white/5 transition-all flex items-center justify-center gap-2 cursor-pointer"
             >
-              <span>Browse Phones</span>
+              <span>Explore Features</span>
             </button>
           </motion.div>
 
@@ -118,7 +118,7 @@ export default function HeroSection() {
             variants={itemVariants}
             className="mt-6 text-xs font-mono text-brand-gray-400 tracking-wider"
           >
-            Adaptive billing optimizes your line dynamically.
+            Including PackieAI spam call protection.
           </motion.p>
 
           {/* Slogan metadata bottom bar */}
@@ -127,28 +127,28 @@ export default function HeroSection() {
             className="mt-16 md:mt-20 grid grid-cols-2 sm:grid-cols-3 gap-8 md:gap-16 border-t border-white/5 pt-8 w-full max-w-3xl text-left"
           >
             <div>
-              <div className="font-mono text-[10px] uppercase text-brand-gray-550 tracking-wider">
-                Adaptive Wireless
+              <div className="font-mono text-[10px] uppercase text-brand-gray-500 tracking-wider">
+                Our Mission
               </div>
               <div className="text-xs md:text-sm font-light text-brand-gray-300 mt-1 flex items-center gap-1.5">
                 <span className="w-1.5 h-1.5 rounded-full bg-white" />
-                You use less, you pay less.
+                Connectivity for Everyone
               </div>
             </div>
             <div>
-              <div className="font-mono text-[10px] uppercase text-brand-gray-550 tracking-wider">
-                Membership Focus
+              <div className="font-mono text-[10px] uppercase text-brand-gray-500 tracking-wider">
+                Smart & Clean
               </div>
               <div className="text-xs md:text-sm font-light text-brand-gray-300 mt-1">
-                Feels less like a carrier. More like a membership.
+                Built-in Spam Protection
               </div>
             </div>
             <div className="col-span-2 sm:col-span-1">
-              <div className="font-mono text-[10px] uppercase text-brand-gray-550 tracking-wider">
-                Early Access
+              <div className="font-mono text-[10px] uppercase text-brand-gray-500 tracking-wider">
+                Support First
               </div>
               <div className="text-xs md:text-sm font-light text-brand-gray-300 mt-1">
-                Quietly becoming some people's favorite carrier.
+                Approachable, Human Help
               </div>
             </div>
           </motion.div>

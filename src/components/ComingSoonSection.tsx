@@ -76,8 +76,8 @@ export default function ComingSoonSection() {
           {/* Subtle hacker philosophy category */}
           <motion.div variants={itemVariants} className="flex items-center justify-center gap-3">
             <div className="h-[1px] w-8 bg-brand-gray-800" />
-            <span className="font-mono text-xs text-brand-gray-550 uppercase tracking-widest animate-pulse">
-              09 // LAUNCH CHRONOLOGY
+            <span className="font-mono text-xs text-brand-gray-500 uppercase tracking-widest">
+              01 // COMING SOON
             </span>
             <div className="h-[1px] w-8 bg-brand-gray-800" />
           </motion.div>

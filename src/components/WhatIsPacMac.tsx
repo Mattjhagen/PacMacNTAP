@@ -13,24 +13,24 @@ interface PacMacItem {
 export default function WhatIsPacMac() {
   const items: PacMacItem[] = [
     {
-      id: 'adaptive-billing',
-      category: 'THE HERO FEATURE',
-      title: 'Pricing with situational awareness',
-      description: 'Your bill adapts to your real usage instead of forcing you into fake plan tiers. You use less? You pay less. Wild concept.',
+      id: 'affordable-wireless',
+      category: 'CONNECTIVITY',
+      title: 'Affordable Wireless',
+      description: 'Simple mobile plans focused on accessibility and everyday reliability.',
       icon: <Smartphone className="w-5 h-5 text-white" />,
     },
     {
-      id: 'membership-focus',
-      category: 'INSIDER ACCESS',
-      title: 'Feels less like a carrier. More like a membership.',
-      description: 'Built for early adopters who appreciate clean design, transparent pricing, and zero corporate dead-eyes.',
+      id: 'community-connectivity',
+      category: 'ACCESSIBILITY',
+      title: 'Community Connectivity',
+      description: 'Programs designed to help more people stay connected.',
       icon: <HeartHandshake className="w-5 h-5 text-white" />,
     },
     {
       id: 'smart-features',
-      category: 'SECURITY',
-      title: 'Sarcastic sidekick included',
-      description: 'PackieAI answers your spam calls and talks to robocallers so you don’t have to. Your scammer is about to have a very confusing afternoon.',
+      category: 'INTELLIGENCE',
+      title: 'Smart Mobile Features',
+      description: 'Modern tools like PackieAI help reduce spam calls and improve privacy.',
       icon: <Sparkles className="w-5 h-5 text-white" />,
     },
   ];
@@ -90,15 +90,15 @@ export default function WhatIsPacMac() {
           <div className="flex items-center justify-center gap-3">
             <div className="h-[1px] w-8 bg-brand-gray-800" />
             <span className="font-mono text-xs text-brand-gray-500 uppercase tracking-widest">
-              01 // CORE BRAND PRINCIPLES
+              MISSION MATRIX
             </span>
             <div className="h-[1px] w-8 bg-brand-gray-800" />
           </div>
           <h2 className="font-display text-3xl md:text-5xl font-medium tracking-tight text-white">
-            Finally. A carrier with a personality.
+            What PacMac Mobile Is Building
           </h2>
           <p className="text-sm md:text-base text-brand-gray-400 font-light leading-relaxed">
-            Honestly we just wanted telecom to feel less miserable. So we threw out the standard 2007 playbook.
+            A modern wireless company focused on clear value, approachable support, and smart integrated utilities.
           </p>
         </div>
 
@@ -121,7 +121,7 @@ export default function WhatIsPacMac() {
                   <div className="w-12 h-12 rounded-xl border border-white/10 bg-white/5 flex items-center justify-center text-white">
                     {item.icon}
                   </div>
-                  <span className="font-mono text-[9px] text-brand-gray-550 uppercase tracking-widest">
+                  <span className="font-mono text-[9px] text-brand-gray-500 uppercase tracking-widest">
                     {item.category}
                   </span>
                 </div>
@@ -139,7 +139,7 @@ export default function WhatIsPacMac() {
               {item.id === 'smart-features' ? (
                 <button
                   onClick={() => handleScrollTo('#how-it-works')}
-                  className="mt-8 pt-4 border-t border-white/5 flex items-center justify-between font-mono text-[10px] text-brand-gray-405 group-hover:text-white text-left cursor-pointer w-full bg-transparent"
+                  className="mt-8 pt-4 border-t border-white/5 flex items-center justify-between font-mono text-[10px] text-brand-gray-400 group-hover:text-white text-left cursor-pointer w-full bg-transparent"
                 >
                   <span className="flex items-center gap-1">
                     EXPLORE PACKIEAI FEATURE

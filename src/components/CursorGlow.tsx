@@ -3,24 +3,38 @@ import React, { useEffect, useState } from 'react';
 export default function CursorGlow() {
   const [position, setPosition] = useState({ x: -100, y: -100 });
   const [visible, setVisible] = useState(false);
-  const [isMobile, setIsMobile] = useState(true);
+  const [isMobile, setIsMobile] = useState(() => {
+    if (typeof window !== 'undefined') {
+      try {
+        return !window.matchMedia('(hover: hover)').matches;
+      } catch (e) {
+        return true;
+      }
+    }
+    return true;
+  });
 
   useEffect(() => {
-    // Check if device supports fine hover events
     const checkViewportAndTouch = () => {
-      const worksWithHover = window.matchMedia('(hover: hover)').matches;
-      setIsMobile(!worksWithHover);
+      try {
+        const worksWithHover = window.matchMedia('(hover: hover)').matches;
+        setIsMobile(!worksWithHover);
+      } catch (e) {
+        setIsMobile(true);
+      }
     };
 
-    checkViewportAndTouch();
     window.addEventListener('resize', checkViewportAndTouch);
 
-    if (isMobile) return;
+    if (isMobile) {
+      return () => {
+        window.removeEventListener('resize', checkViewportAndTouch);
+      };
+    }
 
     const handleMouseMove = (e: MouseEvent) => {
-      // Lagged position updating can be done smoothly with standard hardware tracking or CSS offsets
       setPosition({ x: e.clientX, y: e.clientY });
-      if (!visible) setVisible(true);
+      setVisible(true);
     };
 
     const handleMouseLeave = () => {
@@ -35,7 +49,7 @@ export default function CursorGlow() {
       window.removeEventListener('mousemove', handleMouseMove);
       document.documentElement.removeEventListener('mouseleave', handleMouseLeave);
     };
-  }, [isMobile, visible]);
+  }, [isMobile]);
 
   if (isMobile || !visible) return null;
 
