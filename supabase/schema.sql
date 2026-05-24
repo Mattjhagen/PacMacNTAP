@@ -108,3 +108,27 @@ CREATE POLICY "Allow anonymous waitlist signups" ON public.waitlist
   FOR INSERT WITH CHECK (TRUE);
 CREATE POLICY "Allow select views on admin queries" ON public.waitlist
   FOR SELECT USING (TRUE); -- Managed via admin role restrictions in real scenarios
+
+-- 7. Devices (Checked/Registered user handsets)
+CREATE TABLE IF NOT EXISTS public.devices (
+  id UUID DEFAULT uuid_generate_v4() PRIMARY KEY,
+  profile_id UUID REFERENCES public.profiles(id) ON DELETE CASCADE, -- Nullable until checkout/login
+  imei TEXT NOT NULL,
+  brand TEXT,
+  model TEXT,
+  compatibility_status TEXT CHECK (compatibility_status IN ('compatible', 'unsupported', 'locked')),
+  sim_type TEXT DEFAULT 'eSIM' CHECK (sim_type IN ('eSIM', 'Physical SIM')),
+  is_esim_capable BOOLEAN DEFAULT TRUE,
+  activation_readiness TEXT, -- e.g., 'Ready', 'Requires Unlock', 'Not Eligible'
+  created_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now()) NOT NULL
+);
+
+-- RLS Policies for Devices
+ALTER TABLE public.devices ENABLE ROW LEVEL SECURITY;
+CREATE POLICY "Allow anonymous device inserts during onboarding" ON public.devices
+  FOR INSERT WITH CHECK (TRUE);
+CREATE POLICY "Allow users to view their own devices" ON public.devices
+  FOR SELECT USING (auth.uid() = profile_id OR profile_id IS NULL);
+CREATE POLICY "Allow users to update their own devices" ON public.devices
+  FOR UPDATE USING (auth.uid() = profile_id);
+

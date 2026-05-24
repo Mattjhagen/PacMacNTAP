@@ -145,3 +145,13 @@
   text-shadow: 0 0 20px rgba(255, 255, 255, 0.4);
 }
 
+@keyframes shimmerAnim {
+  0% { transform: translateX(-100%); }
+  100% { transform: translateX(300%); }
+}
+
+.animate-shimmer {
+  animation: shimmerAnim 2s infinite linear;
+}
+
+

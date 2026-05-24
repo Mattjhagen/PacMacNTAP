@@ -12,8 +12,9 @@ class MockAuth {
   private listeners: Set<(event: string, session: any) => void> = new Set();
   
   constructor() {
-    // Setup initial session in storage if missing
-    if (!localStorage.getItem('pacmac_user_session')) {
+    // Setup initial session in storage if missing and not logged out
+    const isLoggedOut = localStorage.getItem('pacmac_user_logged_out') === 'true';
+    if (!localStorage.getItem('pacmac_user_session') && !isLoggedOut) {
       const defaultUser = {
         email: 'demo@pacmac.com',
         name: 'Alex Mercer',
@@ -51,6 +52,10 @@ class MockAuth {
   }
 
   async getSession() {
+    const isLoggedOut = localStorage.getItem('pacmac_user_logged_out') === 'true';
+    if (isLoggedOut) {
+      return { data: { session: null }, error: null };
+    }
     const raw = localStorage.getItem('pacmac_user_session');
     if (raw) {
       try {
@@ -71,6 +76,8 @@ class MockAuth {
   async verifyOtp(params: { email: string; token: string; type: 'magiclink' | 'signup' | 'sms' }) {
     let sessionData = null;
     const emailLower = params.email.toLowerCase();
+
+    localStorage.removeItem('pacmac_user_logged_out');
 
     if (emailLower === 'demo@pacmac.com') {
       const raw = localStorage.getItem('pacmac_user_session');
@@ -106,6 +113,7 @@ class MockAuth {
   }
 
   async signOut() {
+    localStorage.setItem('pacmac_user_logged_out', 'true');
     localStorage.removeItem('pacmac_user_session');
     this.listeners.forEach(cb => cb('SIGNED_OUT', null));
     return { error: null };
@@ -154,6 +162,11 @@ class MockQueryBuilder {
       return { data: JSON.parse(raw), error: null };
     }
 
+    if (this.tableName === 'devices') {
+      const raw = localStorage.getItem('pacmac_user_devices') || '[]';
+      return { data: JSON.parse(raw), error: null };
+    }
+
     return { data: [], error: null };
   }
 
@@ -164,6 +177,18 @@ class MockQueryBuilder {
       const payload = Array.isArray(data) ? data : [data];
       const updated = [...payload, ...arr];
       localStorage.setItem('pacmac_waitlist_signups', JSON.stringify(updated));
+      return {
+        then: (resolve: any) => resolve({ data: payload, error: null }),
+        catch: (reject: any) => reject(null)
+      };
+    }
+
+    if (this.tableName === 'devices') {
+      const raw = localStorage.getItem('pacmac_user_devices') || '[]';
+      const arr = JSON.parse(raw);
+      const payload = Array.isArray(data) ? data : [data];
+      const updated = [...payload, ...arr];
+      localStorage.setItem('pacmac_user_devices', JSON.stringify(updated));
       return {
         then: (resolve: any) => resolve({ data: payload, error: null }),
         catch: (reject: any) => reject(null)

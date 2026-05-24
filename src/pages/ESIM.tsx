@@ -3,8 +3,11 @@ import { motion } from 'motion/react';
 import { QrCode, Cpu, Smartphone, RefreshCw, Check, ArrowRight } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { getSession, setSession } from '../utils/storage';
+import { useAuth } from '../context/AuthContext';
+import { supabase, isLiveDb } from '../utils/supabaseClient';
 
 export default function ESIM() {
+  const { user, refreshSession } = useAuth();
   const [platform, setPlatform] = useState<'ios' | 'android'>('ios');
   const [isVerifying, setIsVerifying] = useState(false);
   const [verifyStatus, setVerifyStatus] = useState<'idle' | 'success' | 'fail'>('idle');
@@ -15,16 +18,29 @@ export default function ESIM() {
     setVerifyStatus('idle');
 
     // Simulate carrier handshake check
-    setTimeout(() => {
+    setTimeout(async () => {
+      if (isLiveDb) {
+        if (user) {
+          try {
+            await supabase
+              .from('profiles')
+              .update({ status: 'active' })
+              .eq('id', user.id);
+            await refreshSession();
+          } catch (e) {
+            console.warn('[ESIM Activation] Failed to update line status:', e);
+          }
+        }
+      } else {
+        const session = getSession();
+        if (session) {
+          session.status = 'active';
+          setSession(session);
+        }
+      }
+
       setIsVerifying(false);
       setVerifyStatus('success');
-
-      // Update current session to active if exists
-      const session = getSession();
-      if (session) {
-        session.status = 'active';
-        setSession(session);
-      }
     }, 2500);
   };
 

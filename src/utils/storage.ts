@@ -33,7 +33,7 @@ export interface UserSession {
   }>;
 }
 
-const DEFAULT_SCAM_LOGS = [
+const DEFAULT_SCAM_LOGS: UserSession['scamTranscripts'] = [
   {
     id: "scam-1",
     caller: "+1 (800) 829-1040 (IRS Agent)",
@@ -83,6 +83,9 @@ export const mockUsers: Record<string, UserSession> = {
 };
 
 export const getSession = (): UserSession | null => {
+  if (localStorage.getItem('pacmac_user_logged_out') === 'true') {
+    return null;
+  }
   const data = localStorage.getItem('pacmac_user_session');
   if (data) {
     try {
@@ -100,8 +103,10 @@ export const getSession = (): UserSession | null => {
 
 export const setSession = (session: UserSession | null) => {
   if (session) {
+    localStorage.removeItem('pacmac_user_logged_out');
     localStorage.setItem('pacmac_user_session', JSON.stringify(session));
   } else {
+    localStorage.setItem('pacmac_user_logged_out', 'true');
     localStorage.removeItem('pacmac_user_session');
   }
 };

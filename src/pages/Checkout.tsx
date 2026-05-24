@@ -4,21 +4,41 @@ import { ShoppingBag, CreditCard, ChevronRight, Lock, CheckCircle, RefreshCw } f
 import { useNavigate } from 'react-router-dom';
 import { getCart, CartItem } from '../utils/storage';
 import { checkoutService } from '../services/checkoutService';
+import { useAuth } from '../context/AuthContext';
 
 export default function Checkout() {
+  const { user } = useAuth();
   const [cart, setCart] = useState<CartItem[]>([]);
   const [email, setEmail] = useState('');
   const [name, setName] = useState('');
   const [address, setAddress] = useState('');
   const [cardNumber, setCardNumber] = useState('');
+  const [deviceCompat, setDeviceCompat] = useState<any>(null);
   
   const [status, setStatus] = useState<'idle' | 'processing' | 'success'>('idle');
   const [processingStep, setProcessingStep] = useState('');
+  const [errorMsg, setErrorMsg] = useState('');
   const navigate = useNavigate();
 
   useEffect(() => {
     setCart(getCart());
+
+    const compatRaw = sessionStorage.getItem('pacmac_onboarding_device_result');
+    if (compatRaw) {
+      try {
+        setDeviceCompat(JSON.parse(compatRaw));
+      } catch (e) {
+        setDeviceCompat(null);
+      }
+    }
   }, []);
+
+  useEffect(() => {
+    if (user) {
+      if (!email) setEmail(user.email || '');
+      if (!name) setName(user.name || '');
+    }
+  }, [user, email, name]);
 
   const total = cart.reduce((acc, item) => acc + item.price, 0);
   const monthlyItems = cart.filter(item => item.isFinanced);
@@ -29,6 +49,7 @@ export default function Checkout() {
     if (!email || !name || (!cardNumber && total > 0)) return;
 
     setStatus('processing');
+    setErrorMsg('');
     setProcessingStep('Authorizing secure checkout ledger...');
     
     // Simulate transaction latency updates
@@ -45,20 +66,25 @@ export default function Checkout() {
                          sessionStorage.getItem('pacmac_checkout_device') || 
                          'Unlocked Phone (BYOP)';
 
-    const { success, error } = await checkoutService.processCheckout(
-      email,
-      name,
-      address,
-      cart,
-      simType,
-      chosenDevice
-    );
+    try {
+      const { success, error } = await checkoutService.processCheckout(
+        email,
+        name,
+        address,
+        cart,
+        simType,
+        chosenDevice
+      );
 
-    if (success) {
-      setStatus('success');
-    } else {
+      if (success) {
+        setStatus('success');
+      } else {
+        setStatus('idle');
+        setErrorMsg(error || "We couldn't connect to the secure ledger. Please check your details and try again.");
+      }
+    } catch (err: any) {
       setStatus('idle');
-      alert(error || "Transaction authorization failed.");
+      setErrorMsg(err.message || "We couldn't establish a secure connection to the ledger. Let's try again in a moment.");
     }
   };
 
@@ -85,7 +111,7 @@ export default function Checkout() {
       <div className="absolute top-[20%] left-1/2 -translate-x-1/2 w-[70vw] h-[35vh] radial-glow-gradient pointer-events-none z-0" />
       <div className="absolute inset-0 bg-grid-pattern opacity-15 z-0 animate-grid-drift" />
 
-      <main className="relative z-10 max-w-5xl mx-auto px-6 pt-32 md:pt-40">
+      <main className="relative z-10 max-w-5xl mx-auto px-6 pt-24 sm:pt-32 md:pt-40 pb-16 sm:pb-24">
         <AnimatePresence mode="wait">
           {status === 'idle' && (
             <motion.div
@@ -93,10 +119,10 @@ export default function Checkout() {
               initial={{ opacity: 0, y: 10 }}
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0, y: -10 }}
-              className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start"
+              className="grid grid-cols-1 lg:grid-cols-12 gap-6 lg:gap-8 items-start"
             >
               {/* Form details (Left 7 cols) */}
-              <div className="lg:col-span-7 border border-white/5 bg-neutral-950/40 backdrop-blur-md rounded-xl p-8">
+              <div className="lg:col-span-7 border border-white/5 bg-neutral-950/40 backdrop-blur-md rounded-xl p-5 sm:p-8">
                 <h1 className="font-display text-2xl font-semibold tracking-tight text-white mb-6">
                   Account details
                 </h1>
@@ -168,12 +194,41 @@ export default function Checkout() {
                     </div>
                   )}
 
-                  <div className="border-t border-white/5 pt-6 flex justify-between items-center text-xs text-brand-gray-500">
-                    <span className="flex items-center gap-1.5 font-mono">
-                      <Lock className="w-3.5 h-3.5" />
-                      SECURE BANK-GRADE LEDGER
-                    </span>
+                  {deviceCompat && (
+                    <div className="rounded-lg border border-white/5 bg-neutral-950/40 p-4 flex gap-3.5 items-start">
+                      <div className="w-5 h-5 rounded-full bg-white/5 border border-white/10 text-white flex items-center justify-center shrink-0 mt-0.5">
+                        <CheckCircle className="w-3.5 h-3.5 text-green-400" />
+                      </div>
+                      <div className="space-y-1 text-xs">
+                        <h4 className="font-semibold text-white">Device Compatibility Confirmed</h4>
+                        <p className="text-brand-gray-400 leading-relaxed font-light">
+                          Your {deviceCompat.brand} {deviceCompat.model} is fully compatible and verified for {deviceCompat.sim_type === 'eSIM' ? 'immediate eSIM activation' : 'next-day physical SIM shipping'}.
+                        </p>
+                        <span className="block text-[9px] font-mono text-brand-gray-500 uppercase tracking-wider pt-1">
+                          Status: {deviceCompat.activation_readiness} • SIM: {deviceCompat.sim_type}
+                        </span>
+                      </div>
+                    </div>
+                  )}
+
+                  <div className="border-t border-white/5 pt-6 space-y-4">
+                    <div className="flex items-center justify-between text-[10px] font-mono text-brand-gray-500 uppercase tracking-wider">
+                      <span className="flex items-center gap-1.5">
+                        <Lock className="w-3.5 h-3.5 text-white/40" />
+                        Secure 256-bit encryption
+                      </span>
+                      <span>SSL Verified Gateway</span>
+                    </div>
+                    <div className="rounded-lg bg-white/[0.01] border border-white/5 p-3.5 text-[11px] text-brand-gray-400 leading-relaxed font-light">
+                      <strong>Billing expectations:</strong> PacMac automatically credits back unused data at $0.64/GB. The payment card provided will be authorized today but only charged your cycle base rate ($12) on line activation.
+                    </div>
                   </div>
+
+                  {errorMsg && (
+                    <div className="border border-red-500/10 bg-red-950/20 text-red-400 p-4 rounded-lg text-xs leading-relaxed text-center font-mono select-none animate-pulse">
+                      ⚠️ {errorMsg}
+                    </div>
+                  )}
 
                   <button
                     type="submit"
@@ -186,7 +241,7 @@ export default function Checkout() {
               </div>
 
               {/* Order summary (Right 5 cols) */}
-              <div className="lg:col-span-5 border border-white/10 bg-neutral-950/80 rounded-xl p-8 flex flex-col justify-between shadow-lg">
+              <div className="lg:col-span-5 border border-white/10 bg-neutral-950/80 rounded-xl p-5 sm:p-8 flex flex-col justify-between shadow-lg">
                 <div className="space-y-6">
                   <h3 className="font-mono text-xs text-brand-gray-400 uppercase tracking-widest border-b border-white/5 pb-3">
                     Order Summary
@@ -198,7 +253,11 @@ export default function Checkout() {
                         <div>
                           <span className="font-semibold text-white block">{item.name}</span>
                           <span className="text-[10px] text-brand-gray-500 font-mono capitalize block mt-0.5">
-                            {item.type === 'device' ? (item.isFinanced ? 'Monthly Finance' : 'Purchase Outright') : 'Setup Fee'}
+                            {item.type === 'device' 
+                              ? (item.isFinanced ? 'Monthly Finance' : 'Purchase Outright') 
+                              : item.type === 'byop' 
+                                ? 'BYOP Handset Setup' 
+                                : 'Plan Setup Fee'}
                           </span>
                         </div>
                         <span className="font-mono text-brand-gray-300 font-medium">
@@ -227,9 +286,9 @@ export default function Checkout() {
                   </div>
                 </div>
 
-                <p className="text-[9px] font-mono text-brand-gray-500 leading-relaxed mt-8">
-                  By clicking authorizer, you establish cellular profile references. If eSIM is chosen, you will immediately download your scanner profile. Cancel anytime on your dashboard.
-                </p>
+                 <p className="text-[10px] font-mono text-brand-gray-500 leading-relaxed mt-8">
+                   By activating, your cellular subscription profiles are registered. If eSIM is selected, you will be prompted to scan your QR profile on the next screen. Physical SIM cards are dispatched next-day via FedEx. You can modify, freeze, or terminate your line at any time from your member console with a single click.
+                 </p>
               </div>
             </motion.div>
           )}
@@ -240,12 +299,15 @@ export default function Checkout() {
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
-              className="max-w-md mx-auto text-center border border-white/5 bg-neutral-950/40 rounded-xl p-8 py-16 space-y-6"
+              className="max-w-md mx-auto text-center border border-white/5 bg-neutral-950/40 rounded-xl p-6 sm:p-8 py-16 space-y-6"
             >
-              <RefreshCw className="w-10 h-10 text-white animate-spin mx-auto" />
-              <div className="space-y-2">
-                <h2 className="text-lg font-semibold tracking-tight text-white">Configuring cellular profile...</h2>
-                <p className="text-xs text-brand-gray-400 font-mono">{processingStep}</p>
+              {/* Shimmer loading bar */}
+              <div className="relative w-full h-[2px] bg-neutral-900 rounded-full overflow-hidden mb-2">
+                <div className="absolute top-0 bottom-0 left-0 w-2/5 bg-gradient-to-r from-transparent via-white/40 to-transparent animate-shimmer rounded-full" />
+              </div>
+              <div className="space-y-2 select-none">
+                <h2 className="text-[10px] font-mono uppercase tracking-widest text-brand-gray-500">Configuring line profile</h2>
+                <p className="text-xs text-white font-light tracking-wide">{processingStep}</p>
               </div>
             </motion.div>
           )}

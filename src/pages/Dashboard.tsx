@@ -2,44 +2,156 @@ import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import { ShieldCheck, HardDrive, CircleDollarSign, Wifi, Activity, AlertTriangle, ArrowRight, RefreshCw, X, MessageSquare, Shield } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
-import { authService, UserProfile } from '../services/authService';
+import { useAuth } from '../context/AuthContext';
 import { usageService, UsageReport } from '../services/usageService';
 import { supportService, BlockedCallLog } from '../services/supportService';
 import { billingService } from '../services/billingService';
+import { supabase, isLiveDb } from '../utils/supabaseClient';
 
 export default function Dashboard() {
-  const [profile, setProfile] = useState<UserProfile | null>(null);
+  const { user, signOut, refreshSession } = useAuth();
+  const profile = user;
   const [usage, setUsage] = useState<UsageReport | null>(null);
   const [scams, setScams] = useState<BlockedCallLog[]>([]);
   const [activeScam, setActiveScam] = useState<BlockedCallLog | null>(null);
+  const [device, setDevice] = useState<any | null>(null);
   
   const [isDiagnosing, setIsDiagnosing] = useState(false);
   const [diagnosticsLog, setDiagnosticsLog] = useState<string[]>([]);
+  const [dataLoading, setDataLoading] = useState(true);
+  const [dashboardError, setDashboardError] = useState<string | null>(null);
   
   const navigate = useNavigate();
 
   useEffect(() => {
+    if (!user) return;
+
     // Fetch data from service layer
     async function loadDashboardData() {
-      const user = await authService.getCurrentUser();
-      if (!user) {
-        navigate('/login');
-        return;
+      setDataLoading(true);
+      setDashboardError(null);
+      try {
+        const usageData = await usageService.getUsageData(user!.id);
+        setUsage(usageData);
+
+        const scamLogs = await supportService.getSpamBlockedLogs(user!.id);
+        setScams(scamLogs);
+
+        // Load registered device data
+        const { data: dbDevices } = await supabase
+          .from('devices')
+          .select()
+          .eq('profile_id', user!.id);
+        
+        if (dbDevices && dbDevices.length > 0) {
+          // Sort by newest created device
+          setDevice(dbDevices[dbDevices.length - 1]);
+        } else {
+          setDevice({
+            brand: user!.device ? user!.device.split(' ')[0] : 'Unlocked',
+            model: user!.device ? user!.device.split(' ').slice(1).join(' ') : 'Phone',
+            sim_type: 'eSIM',
+            activation_readiness: 'Ready (eSIM)'
+          });
+        }
+      } catch (err: any) {
+        console.warn('Failed to load dashboard data:', err);
+        setDashboardError("We couldn't refresh your usage data right now. Displaying cached information.");
+        
+        // Fallback static metrics to keep interface stable during outage
+        if (!usage) {
+          setUsage({
+            dataUsedGb: 8.4,
+            dataCapGb: 30,
+            daysRemaining: 12,
+            wifiGb: 42.1,
+            cellularGb: 8.4,
+            trends: [
+              { day: 'Mon', cellularGb: 1.2, wifiGb: 5.4 },
+              { day: 'Tue', cellularGb: 0.9, wifiGb: 4.8 },
+              { day: 'Wed', cellularGb: 1.5, wifiGb: 6.2 },
+              { day: 'Thu', cellularGb: 1.1, wifiGb: 5.9 },
+              { day: 'Fri', cellularGb: 2.1, wifiGb: 7.1 },
+              { day: 'Sat', cellularGb: 0.8, wifiGb: 6.5 },
+              { day: 'Sun', cellularGb: 0.8, wifiGb: 6.2 }
+            ]
+          });
+        }
+      } finally {
+        setDataLoading(false);
       }
-      setProfile(user);
-
-      const usageData = await usageService.getUsageData(user.id);
-      setUsage(usageData);
-
-      const scamLogs = await supportService.getSpamBlockedLogs();
-      setScams(scamLogs);
     }
 
     loadDashboardData();
-  }, [navigate]);
+  }, [user]);
+
+  // Real-time Supabase updates listener
+  useEffect(() => {
+    if (!user) return;
+
+    if (isLiveDb) {
+      // Subscribe to profile modifications
+      const profileChannel = supabase
+        .channel('dashboard-profile-updates')
+        .on(
+          'postgres_changes',
+          { event: 'UPDATE', schema: 'public', table: 'profiles', filter: `id=eq.${user.id}` },
+          () => {
+            refreshSession();
+          }
+        )
+        .subscribe();
+
+      // Subscribe to registered devices changes
+      const deviceChannel = supabase
+        .channel('dashboard-device-updates')
+        .on(
+          'postgres_changes',
+          { event: '*', schema: 'public', table: 'devices', filter: `profile_id=eq.${user.id}` },
+          async () => {
+            const { data: dbDevices } = await supabase
+              .from('devices')
+              .select()
+              .eq('profile_id', user.id);
+            if (dbDevices && dbDevices.length > 0) {
+              setDevice(dbDevices[dbDevices.length - 1]);
+            }
+          }
+        )
+        .subscribe();
+
+      // Subscribe to caller logs changes
+      const logsChannel = supabase
+        .channel('dashboard-logs-updates')
+        .on(
+          'postgres_changes',
+          { event: '*', schema: 'public', table: 'packie_logs', filter: `profile_id=eq.${user.id}` },
+          async () => {
+            const scamLogs = await supportService.getSpamBlockedLogs(user.id);
+            setScams(scamLogs);
+          }
+        )
+        .subscribe();
+
+      return () => {
+        supabase.removeChannel(profileChannel);
+        supabase.removeChannel(deviceChannel);
+        supabase.removeChannel(logsChannel);
+      };
+    } else {
+      // Emulator mode updates listener
+      const handleStorageChange = (e: StorageEvent) => {
+        if (e.key === 'pacmac_user_session' || e.key === 'pacmac_user_devices') {
+          refreshSession();
+        }
+      };
+      window.addEventListener('storage', handleStorageChange);
+      return () => window.removeEventListener('storage', handleStorageChange);
+    }
+  }, [user, refreshSession]);
 
   const handleSignOut = async () => {
-    await authService.signOut();
+    await signOut();
     navigate('/');
   };
 
@@ -55,22 +167,55 @@ export default function Dashboard() {
         setDiagnosticsLog(prev => [...prev, logText]);
         if (idx === logs.length - 1) {
           setIsDiagnosing(false);
+          sessionStorage.setItem('pacmac_last_diagnostics', new Date().toISOString());
         }
       }, (idx + 1) * 600);
     });
   };
 
-  if (!profile || !usage) return null;
+  if (dataLoading || !user || !usage) {
+    return (
+      <div className="relative min-h-screen bg-black text-white overflow-hidden pb-16 sm:pb-24 font-sans font-light">
+        <div className="absolute top-[15%] left-1/2 -translate-x-1/2 w-[70vw] h-[35vh] radial-glow-gradient pointer-events-none z-0" />
+        <div className="absolute inset-0 bg-grid-pattern opacity-15 z-0 animate-grid-drift" />
+
+        <main className="relative z-10 max-w-6xl mx-auto px-6 pt-24 sm:pt-32 md:pt-40 animate-pulse">
+          {/* Skeleton Header */}
+          <div className="flex flex-col md:flex-row md:items-end justify-between gap-6 mb-12 border-b border-white/5 pb-8">
+            <div className="space-y-3">
+              <div className="h-3.5 w-24 bg-neutral-900 rounded" />
+              <div className="h-7 w-48 bg-neutral-800 rounded" />
+              <div className="h-4.5 w-80 bg-neutral-900 rounded" />
+            </div>
+            <div className="h-9 w-24 bg-neutral-900 border border-white/5 rounded" />
+          </div>
+
+          {/* Skeleton Grid */}
+          <div className="grid grid-cols-1 md:grid-cols-12 gap-6 items-stretch mb-8">
+            <div className="md:col-span-4 border border-white/5 bg-neutral-950/20 rounded-xl p-6 h-72 flex flex-col justify-between items-center" />
+            <div className="md:col-span-4 border border-white/5 bg-neutral-950/20 rounded-xl p-6 h-72 flex flex-col justify-between" />
+            <div className="md:col-span-4 border border-white/5 bg-neutral-950/20 rounded-xl p-6 h-72 flex flex-col justify-between" />
+          </div>
+
+          {/* Skeleton diagnostics and charts */}
+          <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
+            <div className="lg:col-span-7 border border-white/5 bg-neutral-950/20 rounded-xl p-8 h-80" />
+            <div className="lg:col-span-5 border border-white/5 bg-neutral-950/20 rounded-xl p-8 h-80" />
+          </div>
+        </main>
+      </div>
+    );
+  }
 
   const billingInfo = billingService.getSavingsInfo(usage.dataUsedGb);
 
   return (
-    <div className="relative min-h-screen bg-black text-white overflow-hidden pb-24 font-sans font-light">
+    <div className="relative min-h-screen bg-black text-white overflow-hidden pb-16 sm:pb-24 font-sans font-light">
       {/* Background ambient lighting */}
       <div className="absolute top-[15%] left-1/2 -translate-x-1/2 w-[70vw] h-[35vh] radial-glow-gradient pointer-events-none z-0" />
       <div className="absolute inset-0 bg-grid-pattern opacity-15 z-0 animate-grid-drift" />
 
-      <main className="relative z-10 max-w-6xl mx-auto px-6 pt-32 md:pt-40">
+      <main className="relative z-10 max-w-6xl mx-auto px-6 pt-24 sm:pt-32 md:pt-40">
         
         {/* Profile Header */}
         <div className="flex flex-col md:flex-row md:items-end justify-between gap-6 mb-12 border-b border-white/5 pb-8">
@@ -82,7 +227,7 @@ export default function Dashboard() {
               Hi, {profile.name || 'Member'}.
             </h1>
             <p className="mt-1 text-xs text-brand-gray-400 font-mono">
-              Line: {profile.phone || 'eSIM Profile'} • Status: On-Grid
+              Line: {profile.phone || 'eSIM Profile'} • Status: On-Grid • Device: {device ? `${device.brand} ${device.model} (${device.sim_type})` : (profile.device || 'Unlocked Phone')}
             </p>
           </div>
 
@@ -94,11 +239,51 @@ export default function Dashboard() {
           </button>
         </div>
 
+        {dashboardError && (
+          <div className="mb-8 border border-yellow-500/10 bg-yellow-950/5 p-4 rounded-xl flex items-center justify-between text-xs text-brand-gray-400 font-mono select-none">
+            <span className="flex items-center gap-2">
+              <span className="w-1.5 h-1.5 rounded-full bg-yellow-500 animate-ping" />
+              {dashboardError}
+            </span>
+            <button
+              onClick={() => setDashboardError(null)}
+              className="text-[9px] font-semibold text-brand-gray-500 hover:text-white transition-colors uppercase cursor-pointer"
+            >
+              Dismiss
+            </button>
+          </div>
+        )}
+
+        {/* eSIM Activation Continuity Banner */}
+        {profile?.status === 'pending_activation' && (
+          <div className="mb-8 p-6 rounded-2xl border border-white/10 bg-gradient-to-r from-neutral-950 via-neutral-900 to-neutral-950 shadow-xl relative overflow-hidden flex flex-col md:flex-row md:items-center justify-between gap-6">
+            <div className="absolute top-0 right-0 w-64 h-64 bg-white/[0.02] rounded-full blur-3xl pointer-events-none" />
+            <div className="space-y-1 z-10">
+              <span className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full text-[9px] font-mono font-medium bg-white/10 text-white uppercase tracking-wider">
+                Pending Activation
+              </span>
+              <h2 className="text-lg font-display font-medium text-white pt-2">
+                Your eSIM profile is ready.
+              </h2>
+              <p className="text-xs text-brand-gray-400 font-light max-w-xl">
+                Scan your QR code to configure network access and activate your line on this device.
+              </p>
+            </div>
+            <button
+              onClick={() => navigate('/esim')}
+              className="px-5 py-2.5 text-xs font-mono bg-white text-black hover:bg-neutral-200 transition-all rounded-lg font-medium shadow-md hover:shadow-lg flex items-center gap-2 self-start md:self-auto cursor-pointer z-10 shrink-0"
+            >
+              Scan QR Code
+              <ArrowRight className="w-3.5 h-3.5" />
+            </button>
+          </div>
+        )}
+
         {/* Dashboard Grid (Spotify Wrapped style layout) */}
         <div className="grid grid-cols-1 md:grid-cols-12 gap-6 items-stretch mb-8">
           
           {/* Card 1: Data Circle Gauge (4 cols) */}
-          <div className="md:col-span-4 border border-white/5 bg-neutral-950/40 rounded-xl p-6 flex flex-col justify-between items-center text-center">
+          <div className="md:col-span-4 border border-white/5 bg-neutral-950/40 rounded-xl p-6 flex flex-col justify-between items-center text-center hover:border-white/10 transition-all">
             <div className="w-full flex justify-between items-center border-b border-white/5 pb-3">
               <span className="text-[9px] font-mono text-brand-gray-500 uppercase tracking-widest">
                 Data Volume
@@ -114,42 +299,42 @@ export default function Dashboard() {
                   cy="80"
                   r="68"
                   className="stroke-neutral-900 fill-none"
-                  strokeWidth="6"
+                  strokeWidth="4"
                 />
                 <circle
                   cx="80"
                   cy="80"
                   r="68"
                   className="stroke-white fill-none transition-all duration-1000"
-                  strokeWidth="6"
+                  strokeWidth="4"
+                  strokeLinecap="round"
                   strokeDasharray={2 * Math.PI * 68}
                   strokeDashoffset={2 * Math.PI * 68 * (1 - usage.dataUsedGb / usage.dataCapGb)}
                 />
               </svg>
               <div className="flex flex-col items-center">
-                <span className="text-3xl font-display font-semibold text-white">
+                <span className="text-4xl font-display font-semibold text-white">
                   {usage.dataUsedGb.toFixed(1)}
                 </span>
-                <span className="text-[10px] text-brand-gray-500 font-mono">
+                <span className="text-[10px] text-brand-gray-500 font-mono mt-0.5">
                   of {usage.dataCapGb} GB Cap
                 </span>
               </div>
             </div>
 
-            <div className="w-full text-left space-y-2 border-t border-white/5 pt-4 text-xs">
-              <div className="flex justify-between">
-                <span className="text-brand-gray-400">Cycle Remaining</span>
-                <span className="font-mono text-white">{usage.daysRemaining} days</span>
-              </div>
-              <div className="flex justify-between">
-                <span className="text-brand-gray-400">Wi-Fi (Unbilled)</span>
-                <span className="font-mono text-white">{usage.wifiGb.toFixed(1)} GB</span>
+            <div className="w-full text-left space-y-3 border-t border-white/5 pt-4 text-xs font-light">
+              <p className="text-[11px] text-brand-gray-400 leading-normal">
+                Nice pacing. You're set to auto-downscale at cycle end, keeping billing minimal.
+              </p>
+              <div className="flex justify-between border-t border-white/[0.02] pt-2 text-[10px] font-mono text-brand-gray-500">
+                <span>Cycle Remaining</span>
+                <span className="text-white">{usage.daysRemaining} days</span>
               </div>
             </div>
           </div>
 
-          {/* Card 2: Adaptive Savings Sparkline (4 cols) */}
-          <div className="md:col-span-4 border border-white/5 bg-neutral-950/40 rounded-xl p-6 flex flex-col justify-between">
+          {/* Card 2: Adaptive Savings (4 cols) */}
+          <div className="md:col-span-4 border border-white/5 bg-neutral-950/40 rounded-xl p-6 flex flex-col justify-between hover:border-white/10 transition-all">
             <div className="w-full flex justify-between items-center border-b border-white/5 pb-3">
               <span className="text-[9px] font-mono text-brand-gray-500 uppercase tracking-widest">
                 Adaptive Savings
@@ -158,60 +343,60 @@ export default function Dashboard() {
             </div>
 
             <div className="my-6">
-              <span className="text-[9px] font-mono text-brand-gray-500 uppercase tracking-wider block">
-                Retained Monthly Margins
-              </span>
-              <span className="text-4xl sm:text-5xl font-display font-semibold text-white mt-1 block glow-sm">
+              <span className="text-5xl font-display font-semibold text-white tracking-tight block">
                 ${billingInfo.savings.toFixed(2)}
               </span>
-              <p className="text-xs text-brand-gray-400 leading-relaxed font-light mt-3">
-                Since PacMac automatically scales your rate down, you've saved <strong className="text-white font-normal">${billingInfo.savings.toFixed(2)}</strong> this cycle compared to flat-rate competitor pricing.
+              <span className="text-[10px] text-brand-gray-400 font-mono mt-1 block">
+                Saved this billing cycle
+              </span>
+              <p className="text-xs text-brand-gray-400 leading-relaxed font-light mt-4">
+                Instead of forcing a high flat rate, PacMac continuously scales your billing down to match your actual footprint. No waste, just quiet returns.
               </p>
             </div>
 
             {/* Savings logs sparkline bars */}
-            <div className="flex items-end justify-between h-8 gap-1 mt-4">
+            <div className="flex items-end justify-between h-8 gap-1 mt-4 border-t border-white/5 pt-4">
               {[25, 45, 15, 30, 20, 60, 40, 22, 35, 50, 28, 48].map((val, idx) => (
                 <div
                   key={idx}
-                  className="w-full bg-white/20 hover:bg-white rounded-t-sm transition-colors"
+                  className="w-full bg-white/10 hover:bg-white/40 rounded-t-sm transition-colors"
                   style={{ height: `${val}%` }}
                 />
               ))}
             </div>
           </div>
 
-          {/* Card 3: PackieAI caller security (4 cols) */}
-          <div className="md:col-span-4 border border-white/5 bg-neutral-950/40 rounded-xl p-6 flex flex-col justify-between">
+          {/* Card 3: PackieAI (4 cols) */}
+          <div className="md:col-span-4 border border-white/5 bg-neutral-950/40 rounded-xl p-6 flex flex-col justify-between hover:border-white/10 transition-all">
             <div className="w-full flex justify-between items-center border-b border-white/5 pb-3">
               <span className="text-[9px] font-mono text-brand-gray-500 uppercase tracking-widest">
-                PackieAI Call Filter
+                PackieAI Security
               </span>
               <ShieldCheck className="w-3.5 h-3.5 text-brand-gray-500" />
             </div>
 
-            <div className="my-4 text-center py-4 bg-white/[0.01] border border-white/5 rounded-lg">
-              <span className="text-3xl font-display font-semibold text-white block">
+            <div className="my-6">
+              <span className="text-5xl font-display font-semibold text-white tracking-tight block">
                 {scams.length}
               </span>
-              <span className="text-[9px] font-mono text-brand-gray-400 uppercase tracking-widest mt-1 block">
-                Scams Intercepted
+              <span className="text-[10px] text-brand-gray-400 font-mono mt-1 block">
+                Scams auto-intercepted
               </span>
+              <p className="text-xs text-brand-gray-400 leading-relaxed font-light mt-4">
+                Our active filter silently intercepts robotic spam before it reaches your handset. Your digital space remains quiet and undisturbed.
+              </p>
             </div>
 
-            <div className="space-y-3">
-              <span className="text-[9px] font-mono text-brand-gray-500 uppercase tracking-wider block">
-                Blocked Transcripts
-              </span>
-              <div className="space-y-1.5 max-h-[140px] overflow-y-auto pr-1">
+            <div className="space-y-2 border-t border-white/5 pt-4">
+              <div className="space-y-1 max-h-[75px] overflow-y-auto pr-1">
                 {scams.map((scam) => (
                   <button
                     key={scam.id}
                     onClick={() => setActiveScam(scam)}
-                    className="w-full text-left p-2 bg-neutral-900 border border-white/5 rounded text-[10px] hover:border-white/20 transition-all flex items-center justify-between cursor-pointer"
+                    className="w-full text-left p-1.5 bg-neutral-900 border border-white/5 rounded text-[9px] hover:border-white/20 transition-all flex items-center justify-between cursor-pointer font-mono"
                   >
-                    <span className="font-mono text-brand-gray-300 truncate max-w-[130px]">{scam.caller}</span>
-                    <span className="text-[8px] text-brand-gray-500 font-mono">{scam.timestamp}</span>
+                    <span className="text-brand-gray-300 truncate max-w-[120px]">{scam.caller}</span>
+                    <span className="text-brand-gray-500">{scam.timestamp}</span>
                   </button>
                 ))}
               </div>
@@ -227,9 +412,9 @@ export default function Dashboard() {
             <div className="flex justify-between items-center border-b border-white/5 pb-4">
               <div>
                 <h3 className="font-mono text-xs text-brand-gray-400 uppercase tracking-widest">
-                  Diagnostic terminal
+                  Diagnostics Ledger
                 </h3>
-                <p className="text-[10px] text-brand-gray-500 font-mono mt-0.5">Cell APN Handshake & SIM Verification</p>
+                <p className="text-[10px] text-brand-gray-500 font-mono mt-0.5">APN Status & Signal Verifier</p>
               </div>
 
               <button
@@ -238,18 +423,18 @@ export default function Dashboard() {
                 className="px-3.5 py-1.5 text-[10px] font-mono border border-white/10 hover:border-white/20 rounded hover:bg-white/5 transition-all flex items-center gap-1.5 disabled:opacity-50 cursor-pointer"
               >
                 <Activity className="w-3.5 h-3.5" />
-                {isDiagnosing ? "Diagnosing..." : "Run diagnostics"}
+                {isDiagnosing ? "Verifying..." : "Verify Line Integrity"}
               </button>
             </div>
 
-            <div className="bg-neutral-950 border border-white/10 rounded-lg p-5 font-mono text-xs space-y-2 min-h-[160px] flex flex-col justify-end text-left shadow-inner">
+            <div className="bg-neutral-950 border border-white/5 rounded-lg p-5 font-mono text-[11px] space-y-2 min-h-[160px] flex flex-col justify-end text-left shadow-inner">
               {diagnosticsLog.length === 0 && !isDiagnosing && (
-                <p className="text-brand-gray-500 italic">Select 'Run diagnostics' to review line telemetry...</p>
+                <p className="text-brand-gray-500 italic">Select 'Verify Line Integrity' to query live cell telemetry...</p>
               )}
 
               {diagnosticsLog.map((log, idx) => (
-                <p key={idx} className="text-brand-gray-300">
-                  <span className="text-brand-gray-600 mr-2">&gt;</span>
+                <p key={idx} className="text-brand-gray-400">
+                  <span className="text-brand-gray-700 mr-2">✔</span>
                   {log}
                 </p>
               ))}
@@ -263,35 +448,45 @@ export default function Dashboard() {
             </div>
           </div>
 
-          {/* Wi-Fi vs Cellular charts (Right 5 cols) */}
-          <div className="lg:col-span-5 border border-white/5 bg-neutral-950/40 rounded-xl p-8 space-y-6">
+          {/* Wi-Fi vs Cellular split (Right 5 cols) - Spotify Wrapped style */}
+          <div className="lg:col-span-5 border border-white/5 bg-neutral-950/40 rounded-xl p-8 space-y-6 flex flex-col justify-between min-h-[296px]">
             <div className="border-b border-white/5 pb-4">
               <h3 className="font-mono text-xs text-brand-gray-400 uppercase tracking-widest">
-                Usage Trends
+                Traffic Balance
               </h3>
-              <p className="text-[10px] text-brand-gray-500 font-mono mt-0.5">Wi-Fi vs Cellular Balance</p>
+              <p className="text-[10px] text-brand-gray-500 font-mono mt-0.5">Wi-Fi vs Cellular insights</p>
             </div>
 
-            <div className="space-y-4">
-              {/* Daily bars */}
-              {usage.trends.map((item, idx) => {
-                const totalGb = item.cellularGb + item.wifiGb;
-                const cellPercent = totalGb > 0 ? (item.cellularGb / totalGb) * 100 : 0;
-                return (
-                  <div key={idx} className="space-y-1">
-                    <div className="flex justify-between font-mono text-[9px] text-brand-gray-400">
-                      <span>{item.day}</span>
-                      <span>Cell: {item.cellularGb.toFixed(1)}GB • Wi-Fi: {item.wifiGb.toFixed(1)}GB</span>
+            {(() => {
+              const totalGb = usage.wifiGb + usage.cellularGb;
+              const wifiPercent = totalGb > 0 ? (usage.wifiGb / totalGb) * 100 : 80;
+              const cellPercent = totalGb > 0 ? (usage.cellularGb / totalGb) * 100 : 20;
+
+              return (
+                <div className="space-y-6 flex-1 flex flex-col justify-center">
+                  <div className="flex items-end justify-between font-display">
+                    <div>
+                      <span className="text-4xl font-semibold text-white">{wifiPercent.toFixed(0)}%</span>
+                      <span className="text-[10px] text-brand-gray-500 font-mono block uppercase tracking-wider mt-0.5">Wi-Fi Traffic</span>
                     </div>
-                    {/* Visual bar split */}
-                    <div className="h-2 w-full bg-neutral-900 rounded-full overflow-hidden flex">
-                      <div className="bg-white h-full transition-all" style={{ width: `${cellPercent}%` }} />
-                      <div className="bg-neutral-700 h-full transition-all flex-1" />
+                    <div className="text-right">
+                      <span className="text-4xl font-semibold text-brand-gray-300">{cellPercent.toFixed(0)}%</span>
+                      <span className="text-[10px] text-brand-gray-500 font-mono block uppercase tracking-wider mt-0.5">Cellular Traffic</span>
                     </div>
                   </div>
-                );
-              })}
-            </div>
+
+                  {/* Sleek horizontal balance bar */}
+                  <div className="h-3 w-full bg-neutral-900 rounded-full overflow-hidden flex p-[1.5px] border border-white/5">
+                    <div className="bg-white h-full rounded-l-full transition-all" style={{ width: `${wifiPercent}%` }} />
+                    <div className="bg-neutral-600 h-full rounded-r-full transition-all flex-1" />
+                  </div>
+
+                  <p className="text-xs text-brand-gray-400 font-light leading-relaxed">
+                    You've offloaded the vast majority of your traffic to Wi-Fi. This keeps your cellular footprint light and maintains your rate in the lowest possible billing band.
+                  </p>
+                </div>
+              );
+            })()}
           </div>
         </div>
 

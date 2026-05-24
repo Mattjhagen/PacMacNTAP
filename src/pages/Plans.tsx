@@ -23,7 +23,7 @@ export default function Plans() {
       name: 'Adaptive Wireless Line',
       price: pacMacPrice
     });
-    navigate('/checkout');
+    navigate('/byop');
   };
 
   return (
@@ -32,15 +32,15 @@ export default function Plans() {
       <div className="absolute top-[-10%] left-1/2 -translate-x-1/2 w-[85vw] h-[45vh] radial-glow-gradient pointer-events-none z-0" />
       <div className="absolute inset-0 bg-grid-pattern opacity-20 z-0 animate-grid-drift" />
 
-      <main className="relative z-10 max-w-5xl mx-auto px-6 pt-32 md:pt-40">
+      <main className="relative z-10 max-w-5xl mx-auto px-6 pt-24 sm:pt-32 md:pt-40 pb-16 sm:pb-24">
         
         {/* Emotional Header - Leading with the core billing issue first */}
-        <div className="text-center max-w-4xl mx-auto mb-16 space-y-6">
-          <span className="text-[10px] uppercase font-mono tracking-widest text-brand-gray-500 block">
+        <div className="text-center max-w-4xl mx-auto mb-10 sm:mb-16 space-y-4 sm:space-y-6">
+          <span className="text-[9px] sm:text-[10px] uppercase font-mono tracking-widest text-brand-gray-500 block">
             The Telecom Guessing Game is Over
           </span>
           
-          <h1 className="font-display text-4xl sm:text-6xl font-semibold tracking-tight leading-[1.1] text-white">
+          <h1 className="font-display text-3xl sm:text-5xl md:text-6xl font-semibold tracking-tight leading-[1.15] text-white">
             You paid for <span className="underline decoration-white/20 text-neutral-400">80 GB</span>. <br />
             You used <span className="font-mono text-white glow-sm">14 GB</span>. <br />
             <span className="text-transparent bg-clip-text bg-gradient-to-b from-white to-brand-gray-400 text-glow-sm">
@@ -48,40 +48,41 @@ export default function Plans() {
             </span>
           </h1>
 
-          <p className="mt-8 text-sm md:text-base text-brand-gray-400 max-w-2xl mx-auto leading-relaxed font-light">
+          <p className="mt-6 sm:mt-8 text-xs sm:text-sm md:text-base text-brand-gray-400 max-w-2xl mx-auto leading-relaxed font-light">
             Traditional carriers profit when you overestimate your plan. They lock you into static tiers, charging you upfront for data you never touch. We think that's wrong. PacMac adjusts dynamically: we count your gigabytes, billing you only for what you consume, up to a maximum safety cap of $30.
           </p>
         </div>
 
         {/* Dynamic Interactive Panel */}
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-stretch mb-16">
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 lg:gap-8 items-stretch mb-10 sm:mb-16">
           
           {/* Slider Controls (Left 7 cols) */}
-          <div className="lg:col-span-7 border border-white/5 bg-neutral-950/40 backdrop-blur-md rounded-xl p-8 flex flex-col justify-between">
+          <div className="lg:col-span-7 border border-white/5 bg-neutral-950/40 backdrop-blur-md rounded-xl p-6 sm:p-8 flex flex-col justify-between">
             <div>
-              <div className="flex justify-between items-center mb-8 border-b border-white/5 pb-4">
+              <div className="flex justify-between items-center mb-6 sm:mb-8 border-b border-white/5 pb-4">
                 <div>
-                  <h3 className="font-mono text-[10px] text-brand-gray-500 uppercase tracking-widest">
+                  <h3 className="font-mono text-[9px] sm:text-[10px] text-brand-gray-500 uppercase tracking-widest">
                     Simulate Your Monthly Data
                   </h3>
-                  <p className="text-[10px] text-brand-gray-400 font-mono mt-0.5">Drag to compare rate scales</p>
+                  <p className="text-[9px] text-brand-gray-400 font-mono mt-0.5 animate-pulse">Drag to compare rate scales</p>
                 </div>
-                <span className="font-display text-2xl font-semibold text-white">
+                <span className="font-display text-xl sm:text-2xl font-semibold text-white">
                   {dataUsage === 50 ? "50+ GB" : `${dataUsage} GB`}
                 </span>
               </div>
 
-              {/* Slider */}
-              <div className="relative mb-10">
+              {/* Slider with improved touch target heights */}
+              <div className="relative py-4 mb-6 sm:mb-10">
                 <input
                   type="range"
                   min="0"
                   max="50"
                   value={dataUsage}
                   onChange={(e) => setDataUsage(Number(e.target.value))}
-                  className="w-full h-1 bg-brand-gray-800 rounded-lg appearance-none cursor-pointer accent-white"
+                  className="w-full h-2 bg-neutral-800 rounded-lg appearance-none cursor-pointer accent-white focus:outline-none"
+                  aria-label="Simulated Monthly Data Usage"
                 />
-                <div className="flex justify-between text-[9px] font-mono text-brand-gray-600 mt-2">
+                <div className="flex justify-between text-[8px] sm:text-[9px] font-mono text-brand-gray-600 mt-2 select-none">
                   <span>0 GB</span>
                   <span>10 GB</span>
                   <span>20 GB</span>
@@ -92,8 +93,8 @@ export default function Plans() {
             </div>
 
             {/* Waste analysis telemetry block */}
-            <div className="bg-white/[0.01] border border-white/5 rounded-lg p-4 font-mono text-xs text-brand-gray-400 space-y-2">
-              <p className="text-[10px] text-brand-gray-500 uppercase tracking-wider">
+            <div className="bg-white/[0.01] border border-white/5 rounded-lg p-4 font-mono text-[11px] sm:text-xs text-brand-gray-400 space-y-2">
+              <p className="text-[9px] sm:text-[10px] text-brand-gray-500 uppercase tracking-wider">
                 Telemetry Breakdown
               </p>
               {dataUsage < 30 ? (
@@ -109,7 +110,7 @@ export default function Plans() {
           </div>
 
           {/* Pricing Ledger Comparison (Right 5 cols) */}
-          <div className="lg:col-span-5 border border-white/10 bg-neutral-950/80 rounded-xl p-8 flex flex-col justify-between relative overflow-hidden shadow-lg">
+          <div className="lg:col-span-5 border border-white/10 bg-neutral-950/80 rounded-xl p-6 sm:p-8 flex flex-col justify-between relative overflow-hidden shadow-lg">
             <div className="absolute top-0 inset-x-0 h-[1px] bg-gradient-to-r from-transparent via-white/30 to-transparent" />
             
             <div className="space-y-6">

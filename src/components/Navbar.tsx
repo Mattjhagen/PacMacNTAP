@@ -1,13 +1,13 @@
 import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
-import { Menu, X, Radio, User, Shield } from 'lucide-react';
+import { Menu, X, Radio } from 'lucide-react';
 import { Link, useLocation } from 'react-router-dom';
-import { getSession } from '../utils/storage';
+import { useAuth } from '../context/AuthContext';
 
 export default function Navbar() {
   const [isOpen, setIsOpen] = useState(false);
   const [scrolled, setScrolled] = useState(false);
-  const [hasSession, setHasSession] = useState(false);
+  const { user, loading, signOut } = useAuth();
   const location = useLocation();
 
   useEffect(() => {
@@ -17,12 +17,6 @@ export default function Navbar() {
     window.addEventListener('scroll', handleScroll);
     return () => window.removeEventListener('scroll', handleScroll);
   }, []);
-
-  // Update session check on route changes or menu opens
-  useEffect(() => {
-    const session = getSession();
-    setHasSession(!!session);
-  }, [location]);
 
   const menuItems = [
     { label: 'Plans', to: '/plans' },
@@ -76,18 +70,30 @@ export default function Navbar() {
 
           {/* Action button */}
           <div className="hidden md:flex items-center gap-4">
-            {hasSession ? (
-              <Link
-                to="/dashboard"
-                className="px-4.5 py-1.5 text-xs font-mono font-semibold tracking-tight text-black bg-white hover:bg-brand-gray-200 rounded transition-all shadow-[0_0_15px_rgba(255,255,255,0.1)] hover:shadow-[0_0_20px_rgba(255,255,255,0.2)] flex items-center gap-1.5"
-              >
-                <User className="w-3.5 h-3.5" />
-                DASHBOARD
-              </Link>
+            {loading ? (
+              <div className="w-20 h-7 bg-neutral-900 border border-white/5 rounded animate-pulse" />
+            ) : user ? (
+              <div className="flex items-center gap-3.5">
+                <span className="text-[10px] font-mono text-brand-gray-400 border-r border-white/5 pr-3.5 tracking-tight uppercase">
+                  {user.name || user.email?.split('@')[0]}
+                </span>
+                <Link
+                  to="/dashboard"
+                  className="px-3.5 py-1.5 text-xs font-mono border border-white/10 hover:border-white/20 rounded hover:bg-white/5 text-white transition-colors"
+                >
+                  DASHBOARD
+                </Link>
+                <button
+                  onClick={signOut}
+                  className="px-3.5 py-1.5 text-xs font-mono border border-transparent text-brand-gray-500 hover:text-white transition-colors cursor-pointer"
+                >
+                  LOGOUT
+                </button>
+              </div>
             ) : (
               <Link
                 to="/login"
-                className="px-4.5 py-1.5 text-xs font-mono border border-white/10 hover:border-white/20 rounded hover:bg-white/5 text-white transition-colors"
+                className="px-4.5 py-1.5 text-xs font-mono font-semibold tracking-tight text-black bg-white hover:bg-brand-gray-200 rounded transition-all shadow-[0_0_15px_rgba(255,255,255,0.1)] hover:shadow-[0_0_20px_rgba(255,255,255,0.2)] flex items-center gap-1.5"
               >
                 SIGN IN
               </Link>
@@ -131,19 +137,35 @@ export default function Navbar() {
             </div>
 
             <div className="flex flex-col gap-4 mt-auto pb-12">
-              {hasSession ? (
-                <Link
-                  to="/dashboard"
-                  onClick={() => setIsOpen(false)}
-                  className="w-full text-center py-3 text-sm font-semibold text-black bg-white rounded-lg"
-                >
-                  Dashboard
-                </Link>
+              {loading ? (
+                <div className="w-full h-12 bg-neutral-900 border border-white/5 rounded animate-pulse" />
+              ) : user ? (
+                <>
+                  <div className="text-center text-xs font-mono text-brand-gray-500 mb-1">
+                    Member: {user.name || user.email}
+                  </div>
+                  <Link
+                    to="/dashboard"
+                    onClick={() => setIsOpen(false)}
+                    className="w-full text-center py-3 text-sm font-semibold text-black bg-white rounded-lg"
+                  >
+                    Dashboard
+                  </Link>
+                  <button
+                    onClick={() => {
+                      setIsOpen(false);
+                      signOut();
+                    }}
+                    className="w-full text-center py-3 text-sm font-semibold text-brand-gray-400 border border-white/10 rounded-lg cursor-pointer"
+                  >
+                    Logout
+                  </button>
+                </>
               ) : (
                 <Link
                   to="/login"
                   onClick={() => setIsOpen(false)}
-                  className="w-full text-center py-3 text-sm font-semibold text-white border border-white/10 rounded-lg"
+                  className="w-full text-center py-3 text-sm font-semibold text-black bg-white rounded-lg"
                 >
                   Sign In
                 </Link>

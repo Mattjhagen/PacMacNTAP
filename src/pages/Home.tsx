@@ -1,9 +1,45 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { motion } from 'motion/react';
-import { ChevronRight, Radio, Shield, HelpCircle, ArrowRight, Smartphone } from 'lucide-react';
+import { ChevronRight, Radio, Shield, HelpCircle, ArrowRight, Smartphone, Lock, Info, Send } from 'lucide-react';
 import { Link } from 'react-router-dom';
 
 export default function Home() {
+  const [waitlistEmail, setWaitlistEmail] = useState('');
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [submitStatus, setSubmitStatus] = useState<'idle' | 'success'>('idle');
+  const [waitlistNum, setWaitlistNum] = useState(0);
+
+  const handleWaitlistSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!waitlistEmail) return;
+
+    setIsSubmitting(true);
+    
+    // Simulate lookup / write latency
+    setTimeout(() => {
+      const generatedNum = Math.floor(Math.random() * 450) + 2480;
+      
+      const newEntry = {
+        name: waitlistEmail.split('@')[0],
+        email: waitlistEmail,
+        date: new Date().toISOString(),
+        waitlistNumber: generatedNum,
+        status: "Active"
+      };
+
+      try {
+        const raw = localStorage.getItem('pacmac_waitlist_signups') || '[]';
+        const arr = JSON.parse(raw);
+        arr.unshift(newEntry);
+        localStorage.setItem('pacmac_waitlist_signups', JSON.stringify(arr));
+      } catch (err) {}
+
+      setWaitlistNum(generatedNum);
+      setIsSubmitting(false);
+      setSubmitStatus('success');
+      setWaitlistEmail('');
+    }, 1200);
+  };
   const containerVariants = {
     hidden: { opacity: 0 },
     visible: {
@@ -176,7 +212,7 @@ export default function Home() {
           whileInView={{ opacity: 1, y: 0 }}
           viewport={{ once: true }}
           transition={{ duration: 0.8 }}
-          className="mt-28 md:mt-36 p-8 border border-white/5 rounded-xl bg-neutral-950/20 text-center max-w-3xl mx-auto"
+          className="mt-24 md:mt-32 p-8 border border-white/5 rounded-xl bg-neutral-950/20 text-center max-w-3xl mx-auto"
         >
           <p className="text-base md:text-lg italic font-light text-brand-gray-300">
             "Your current carrier profits when you overestimate your plan. Your phone bill should behave more like Spotify and less like cable TV."
@@ -184,6 +220,101 @@ export default function Home() {
           <span className="block mt-4 text-[10px] font-mono tracking-widest text-brand-gray-500 uppercase">
             — THE PACMAC PROTOCOL
           </span>
+        </motion.div>
+
+        {/* Waitlist & Interest Capture Section */}
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          viewport={{ once: true }}
+          className="mt-28 md:mt-36 max-w-2xl mx-auto border border-white/10 bg-neutral-950/40 backdrop-blur-md rounded-2xl p-8 sm:p-10 shadow-2xl relative overflow-hidden text-center space-y-6"
+        >
+          <div className="absolute top-0 inset-x-0 h-[1px] bg-gradient-to-r from-transparent via-white/20 to-transparent" />
+          
+          <div className="space-y-2">
+            <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[9px] font-mono font-medium bg-white/10 text-white uppercase tracking-wider">
+              Closed Beta
+            </span>
+            <h2 className="font-display text-2xl font-semibold text-white tracking-tight pt-2">
+              Request Early Access
+            </h2>
+            <p className="text-xs sm:text-sm text-brand-gray-400 font-light max-w-lg mx-auto leading-relaxed">
+              We are onboarding users in controlled weekly batches. Join the queue to secure your line and receive a $10 initial activation credit when we launch.
+            </p>
+          </div>
+
+          {submitStatus === 'success' ? (
+            <div className="p-6 rounded-lg bg-white/5 border border-white/10 max-w-md mx-auto space-y-2">
+              <span className="text-sm font-semibold text-white block">You're on the list.</span>
+              <p className="text-xs text-brand-gray-400 font-light">
+                Your queue number is <strong className="text-white">#{waitlistNum}</strong>. We'll dispatch your private invitation link via email as slots open.
+              </p>
+            </div>
+          ) : (
+            <form onSubmit={handleWaitlistSubmit} className="flex flex-col sm:flex-row gap-2 max-w-md mx-auto">
+              <input
+                type="email"
+                required
+                value={waitlistEmail}
+                onChange={(e) => setWaitlistEmail(e.target.value)}
+                placeholder="Enter email address"
+                className="flex-1 bg-neutral-950 border border-white/10 rounded-lg px-4 py-3 text-xs text-white focus:outline-none focus:border-white transition-all font-mono"
+                disabled={isSubmitting}
+              />
+              <button
+                type="submit"
+                disabled={isSubmitting}
+                className="py-3 px-6 text-xs font-mono bg-white text-black hover:bg-neutral-200 transition-all rounded-lg font-semibold flex items-center justify-center gap-2 cursor-pointer disabled:opacity-50 shrink-0"
+              >
+                {isSubmitting ? (
+                  <RefreshCw className="w-3.5 h-3.5 animate-spin" />
+                ) : (
+                  <>
+                    Request Access
+                    <Send className="w-3.5 h-3.5" />
+                  </>
+                )}
+              </button>
+            </form>
+          )}
+        </motion.div>
+
+        {/* Public Trust Layer */}
+        <motion.div
+          initial={{ opacity: 0 }}
+          whileInView={{ opacity: 1 }}
+          viewport={{ once: true }}
+          className="mt-16 max-w-3xl mx-auto grid grid-cols-1 sm:grid-cols-3 gap-6 pt-8 border-t border-white/5 text-center text-xs font-light"
+        >
+          <div className="space-y-1">
+            <div className="flex justify-center mb-2">
+              <Lock className="w-4 h-4 text-brand-gray-400" />
+            </div>
+            <h4 className="font-semibold text-white text-[11px] font-mono uppercase tracking-wider">End-to-End Privacy</h4>
+            <p className="text-brand-gray-500 text-[10px] leading-relaxed">
+              We never track, store, or resell your cellular location logs or raw telemetry metadata.
+            </p>
+          </div>
+
+          <div className="space-y-1">
+            <div className="flex justify-center mb-2">
+              <Info className="w-4 h-4 text-brand-gray-400" />
+            </div>
+            <h4 className="font-semibold text-white text-[11px] font-mono uppercase tracking-wider">Transparent Billing</h4>
+            <p className="text-brand-gray-500 text-[10px] leading-relaxed">
+              Zero contract obligations. We authorized today, but only charge when your handset active registers.
+            </p>
+          </div>
+
+          <div className="space-y-1">
+            <div className="flex justify-center mb-2">
+              <Shield className="w-4 h-4 text-brand-gray-400" />
+            </div>
+            <h4 className="font-semibold text-white text-[11px] font-mono uppercase tracking-wider">Encrypted Screenings</h4>
+            <p className="text-brand-gray-500 text-[10px] leading-relaxed">
+              All PackieAI scam transcripts are encrypted client-side, keeping your records strictly personal.
+            </p>
+          </div>
         </motion.div>
       </main>
     </div>

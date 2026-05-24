@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { motion } from 'motion/react';
-import { Shield, Download, Trash2, Plus, Users, Search, RefreshCw } from 'lucide-react';
-import { getSession } from '../utils/storage';
+import { Shield, Download, Trash2, Plus, Users, Search, RefreshCw, Key } from 'lucide-react';
+import AuthDiagnostics from '../components/AuthDiagnostics';
 
 interface WaitlistEntry {
   name: string;
@@ -29,6 +29,7 @@ export default function Admin() {
   const [newEmail, setNewEmail] = useState("");
   const [confirmClear, setConfirmClear] = useState(false);
   const [notification, setNotification] = useState<string | null>(null);
+  const [activeTab, setActiveTab] = useState<'waitlist' | 'diagnostics'>('waitlist');
 
   useEffect(() => {
     loadEntries();
@@ -171,114 +172,143 @@ export default function Admin() {
           </div>
         </div>
 
-        {/* Dashboard Panels */}
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
-          
-          {/* Waitlist list (Left 8 cols) */}
-          <div className="lg:col-span-8 border border-white/5 bg-neutral-950/40 rounded-xl p-6 space-y-4">
-            <div className="flex justify-between items-center border-b border-white/5 pb-4">
-              <h3 className="font-mono text-xs text-brand-gray-400 uppercase tracking-widest flex items-center gap-1.5">
-                <Users className="w-4 h-4 text-brand-gray-500" />
-                Registrations ({filteredEntries.length})
-              </h3>
+        {/* Tab Selection */}
+        <div className="flex gap-6 border-b border-white/5 pb-4 mb-8 text-xs font-mono">
+          <button
+            onClick={() => setActiveTab('waitlist')}
+            className={`pb-2 border-b-2 uppercase tracking-wider transition-all cursor-pointer ${
+              activeTab === 'waitlist'
+                ? 'border-white text-white font-bold'
+                : 'border-transparent text-brand-gray-500 hover:text-brand-gray-300'
+            }`}
+          >
+            Waitlist Manager
+          </button>
+          <button
+            onClick={() => setActiveTab('diagnostics')}
+            className={`pb-2 border-b-2 uppercase tracking-wider transition-all cursor-pointer ${
+              activeTab === 'diagnostics'
+                ? 'border-white text-white font-bold'
+                : 'border-transparent text-brand-gray-500 hover:text-brand-gray-300'
+            }`}
+          >
+            Auth & SMTP Diagnostics
+          </button>
+        </div>
 
-              {/* Search */}
-              <div className="relative">
-                <input
-                  type="text"
-                  placeholder="Filter records..."
-                  value={searchTerm}
-                  onChange={(e) => setSearchTerm(e.target.value)}
-                  className="bg-neutral-900 border border-white/10 rounded px-3 py-1.5 text-xs text-white focus:outline-none focus:border-white transition-all font-mono"
-                />
+        {activeTab === 'waitlist' ? (
+          <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
+            
+            {/* Waitlist list (Left 8 cols) */}
+            <div className="lg:col-span-8 border border-white/5 bg-neutral-950/40 rounded-xl p-6 space-y-4">
+              <div className="flex justify-between items-center border-b border-white/5 pb-4">
+                <h3 className="font-mono text-xs text-brand-gray-400 uppercase tracking-widest flex items-center gap-1.5">
+                  <Users className="w-4 h-4 text-brand-gray-500" />
+                  Registrations ({filteredEntries.length})
+                </h3>
+
+                {/* Search */}
+                <div className="relative">
+                  <input
+                    type="text"
+                    placeholder="Filter records..."
+                    value={searchTerm}
+                    onChange={(e) => setSearchTerm(e.target.value)}
+                    className="bg-neutral-900 border border-white/10 rounded px-3 py-1.5 text-xs text-white focus:outline-none focus:border-white transition-all font-mono"
+                  />
+                </div>
+              </div>
+
+              {/* List */}
+              <div className="overflow-x-auto">
+                <table className="w-full text-left font-mono text-xs">
+                  <thead>
+                    <tr className="border-b border-white/5 text-brand-gray-500">
+                      <th className="pb-2 font-normal">Name</th>
+                      <th className="pb-2 font-normal">Email</th>
+                      <th className="pb-2 font-normal">Position</th>
+                      <th className="pb-2 font-normal text-right">Status</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-white/5">
+                    {filteredEntries.map((entry, idx) => (
+                      <tr key={idx} className="text-brand-gray-300">
+                        <td className="py-2.5">{entry.name}</td>
+                        <td className="py-2.5 text-brand-gray-400">{entry.email}</td>
+                        <td className="py-2.5 font-bold">#{entry.waitlistNumber}</td>
+                        <td className="py-2.5 text-right text-green-400">{entry.status}</td>
+                      </tr>
+                    ))}
+                    {filteredEntries.length === 0 && (
+                      <tr>
+                        <td colSpan={4} className="py-8 text-center text-brand-gray-500 italic">
+                          No registrations found matching the filters.
+                        </td>
+                      </tr>
+                    )}
+                  </tbody>
+                </table>
               </div>
             </div>
 
-            {/* List */}
-            <div className="overflow-x-auto">
-              <table className="w-full text-left font-mono text-xs">
-                <thead>
-                  <tr className="border-b border-white/5 text-brand-gray-500">
-                    <th className="pb-2 font-normal">Name</th>
-                    <th className="pb-2 font-normal">Email</th>
-                    <th className="pb-2 font-normal">Position</th>
-                    <th className="pb-2 font-normal text-right">Status</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-white/5">
-                  {filteredEntries.map((entry, idx) => (
-                    <tr key={idx} className="text-brand-gray-300">
-                      <td className="py-2.5">{entry.name}</td>
-                      <td className="py-2.5 text-brand-gray-400">{entry.email}</td>
-                      <td className="py-2.5 font-bold">#{entry.waitlistNumber}</td>
-                      <td className="py-2.5 text-right text-green-400">{entry.status}</td>
-                    </tr>
-                  ))}
-                  {filteredEntries.length === 0 && (
-                    <tr>
-                      <td colSpan={4} className="py-8 text-center text-brand-gray-500 italic">
-                        No registrations found matching the filters.
-                      </td>
-                    </tr>
-                  )}
-                </tbody>
-              </table>
-            </div>
-          </div>
+            {/* Controls Panel (Right 4 cols) */}
+            <div className="lg:col-span-4 space-y-6">
+              
+              {/* Inject Entry */}
+              <div className="border border-white/5 bg-neutral-950/40 rounded-xl p-6 space-y-4">
+                <h3 className="font-mono text-xs text-brand-gray-400 uppercase tracking-widest border-b border-white/5 pb-3">
+                  Inject Record
+                </h3>
+                <form onSubmit={handleAddUser} className="space-y-3">
+                  <input
+                    type="text"
+                    required
+                    placeholder="Full Name"
+                    value={newName}
+                    onChange={(e) => setNewName(e.target.value)}
+                    className="w-full bg-neutral-900 border border-white/10 rounded px-3 py-2 text-xs text-white focus:outline-none focus:border-white transition-all font-mono"
+                  />
+                  <input
+                    type="email"
+                    required
+                    placeholder="email@domain.com"
+                    value={newEmail}
+                    onChange={(e) => setNewEmail(e.target.value)}
+                    className="w-full bg-neutral-900 border border-white/10 rounded px-3 py-2 text-xs text-white focus:outline-none focus:border-white transition-all font-mono"
+                  />
+                  <button
+                    type="submit"
+                    className="w-full py-2 text-xs font-mono font-semibold text-black bg-white hover:bg-brand-gray-200 rounded transition-all flex items-center justify-center gap-1"
+                  >
+                    <Plus className="w-3.5 h-3.5" /> Inject User
+                  </button>
+                </form>
+              </div>
 
-          {/* Controls Panel (Right 4 cols) */}
-          <div className="lg:col-span-4 space-y-6">
-            
-            {/* Inject Entry */}
-            <div className="border border-white/5 bg-neutral-950/40 rounded-xl p-6 space-y-4">
-              <h3 className="font-mono text-xs text-brand-gray-400 uppercase tracking-widest border-b border-white/5 pb-3">
-                Inject Record
-              </h3>
-              <form onSubmit={handleAddUser} className="space-y-3">
-                <input
-                  type="text"
-                  required
-                  placeholder="Full Name"
-                  value={newName}
-                  onChange={(e) => setNewName(e.target.value)}
-                  className="w-full bg-neutral-900 border border-white/10 rounded px-3 py-2 text-xs text-white focus:outline-none focus:border-white transition-all font-mono"
-                />
-                <input
-                  type="email"
-                  required
-                  placeholder="email@domain.com"
-                  value={newEmail}
-                  onChange={(e) => setNewEmail(e.target.value)}
-                  className="w-full bg-neutral-900 border border-white/10 rounded px-3 py-2 text-xs text-white focus:outline-none focus:border-white transition-all font-mono"
-                />
+              {/* Clear database */}
+              <div className="border border-white/5 bg-neutral-950/40 rounded-xl p-6 space-y-4">
+                <h3 className="font-mono text-xs text-brand-gray-400 uppercase tracking-widest border-b border-white/5 pb-3">
+                  Destructive Controls
+                </h3>
                 <button
-                  type="submit"
-                  className="w-full py-2 text-xs font-mono font-semibold text-black bg-white hover:bg-brand-gray-200 rounded transition-all flex items-center justify-center gap-1"
+                  onClick={handleClearAll}
+                  className={`w-full py-2 text-xs font-mono font-semibold rounded transition-all flex items-center justify-center gap-1.5 ${
+                    confirmClear 
+                      ? 'bg-red-600 hover:bg-red-700 text-white' 
+                      : 'bg-white/5 hover:bg-white/10 border border-white/10 text-red-400'
+                  }`}
                 >
-                  <Plus className="w-3.5 h-3.5" /> Inject User
+                  <Trash2 className="w-3.5 h-3.5" />
+                  {confirmClear ? "Click again to confirm purge" : "Purge Stored Database"}
                 </button>
-              </form>
-            </div>
-
-            {/* Clear database */}
-            <div className="border border-white/5 bg-neutral-950/40 rounded-xl p-6 space-y-4">
-              <h3 className="font-mono text-xs text-brand-gray-400 uppercase tracking-widest border-b border-white/5 pb-3">
-                Destructive Controls
-              </h3>
-              <button
-                onClick={handleClearAll}
-                className={`w-full py-2 text-xs font-mono font-semibold rounded transition-all flex items-center justify-center gap-1.5 ${
-                  confirmClear 
-                    ? 'bg-red-600 hover:bg-red-700 text-white' 
-                    : 'bg-white/5 hover:bg-white/10 border border-white/10 text-red-400'
-                }`}
-              >
-                <Trash2 className="w-3.5 h-3.5" />
-                {confirmClear ? "Click again to confirm purge" : "Purge Stored Database"}
-              </button>
+              </div>
             </div>
           </div>
-        </div>
+        ) : (
+          <div className="max-w-2xl mx-auto">
+            <AuthDiagnostics />
+          </div>
+        )}
 
         {notification && (
           <div className="fixed bottom-6 right-6 bg-neutral-950 border border-white/15 p-4 rounded-lg font-mono text-xs text-white shadow-2xl z-50 animate-bounce">

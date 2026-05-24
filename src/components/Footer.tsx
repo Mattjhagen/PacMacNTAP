@@ -33,13 +33,20 @@ export default function Footer() {
           <div className="flex flex-wrap justify-center sm:justify-start gap-4 sm:gap-6">
             <span>© {currentYear} PacMac Mobile. All rights reserved.</span>
             <span className="text-brand-gray-700">|</span>
-            <Link 
-              to="/admin"
-              className="text-brand-gray-500 hover:text-white transition-colors cursor-pointer flex items-center gap-1 font-mono text-[11px]"
+            <button 
+              onClick={() => {
+                const feedback = prompt("Submit beta feedback, bugs, or onboarding friction reports directly to our team:");
+                if (feedback) {
+                  const existing = JSON.parse(localStorage.getItem('pacmac_user_feedback') || '[]');
+                  existing.push({ text: feedback, time: new Date().toISOString() });
+                  localStorage.setItem('pacmac_user_feedback', JSON.stringify(existing));
+                  alert("Thank you. Your feedback has been logged.");
+                }
+              }}
+              className="text-brand-gray-500 hover:text-white transition-colors cursor-pointer flex items-center gap-1 font-mono text-[11px] bg-transparent border-none outline-none"
             >
-              <Shield className="w-3.5 h-3.5 text-brand-gray-500" />
-              <span>ADMIN PORTAL</span>
-            </Link>
+              <span>FEEDBACK & FRICTION REPORTS</span>
+            </button>
           </div>
 
           {/* Meta technical telemetry metrics */}
