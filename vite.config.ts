@@ -2,6 +2,19 @@ import tailwindcss from '@tailwindcss/vite';
 import react from '@vitejs/plugin-react';
 import path from 'path';
 import { defineConfig, loadEnv } from 'vite';
+import {
+  billingEstimateFor,
+  blockNumber,
+  clearSessionCookie,
+  getCustomerDashboard,
+  getSeedSummary,
+  getSessionUser,
+  login,
+  sessionCookie,
+  setPackieProtection,
+  signup,
+  unblockNumber
+} from './server/pacmacBackend';
 
 export default defineConfig(({ mode }) => {
   // Load environment variables (from .env.local, .env, etc.)
@@ -17,19 +30,112 @@ export default defineConfig(({ mode }) => {
         name: 'api-server-endpoints',
         configureServer(server) {
           server.middlewares.use(async (req, res, next) => {
+            const sendJson = (status: number, payload: unknown, cookie?: string) => {
+              res.statusCode = status;
+              res.setHeader('Content-Type', 'application/json');
+              if (cookie) res.setHeader('Set-Cookie', cookie);
+              res.end(JSON.stringify(payload));
+            };
+
+            const readBody = async () => new Promise<any>((resolve) => {
+              let data = '';
+              req.on('data', chunk => { data += chunk; });
+              req.on('end', () => {
+                try { resolve(data ? JSON.parse(data) : {}); }
+                catch { resolve({}); }
+              });
+            });
+
+            const currentUser = () => getSessionUser(req.headers.cookie);
+
+            if (req.url === '/api/auth/login' && req.method === 'POST') {
+              const body = await readBody();
+              if (!body.email || !body.password) return sendJson(400, { error: 'Email and password are required.' });
+              const result = login(body.email, body.password);
+              if (!result.ok) return sendJson(401, { error: result.error });
+              return sendJson(200, { user: result.user }, sessionCookie(result.token));
+            }
+
+            if (req.url === '/api/auth/signup' && req.method === 'POST') {
+              const body = await readBody();
+              if (!body.name || !body.email || !body.password) return sendJson(400, { error: 'Name, email, and password are required.' });
+              if (String(body.password).length < 8) return sendJson(400, { error: 'Password must be at least 8 characters.' });
+              const result = signup(body);
+              if (!result.ok) return sendJson(409, { error: result.error });
+              return sendJson(201, { user: result.user }, sessionCookie(result.token));
+            }
+
+            if (req.url === '/api/auth/logout' && req.method === 'POST') {
+              return sendJson(200, { ok: true }, clearSessionCookie());
+            }
+
+            if (req.url === '/api/auth/me' && req.method === 'GET') {
+              return sendJson(200, { user: currentUser() });
+            }
+
+            if (req.url === '/api/customer/dashboard' && req.method === 'GET') {
+              const user = currentUser();
+              if (!user) return sendJson(401, { error: 'Authentication required.' });
+              const result = getCustomerDashboard(user);
+              if (!result.ok) return sendJson(result.status, { error: result.error });
+              return sendJson(200, result.data);
+            }
+
+            if (req.url === '/api/customer/usage-events' && req.method === 'GET') {
+              const user = currentUser();
+              if (!user) return sendJson(401, { error: 'Authentication required.' });
+              const result = getCustomerDashboard(user);
+              if (!result.ok) return sendJson(result.status, { error: result.error });
+              return sendJson(200, { usageEvents: result.data.usageEvents });
+            }
+
+            if (req.url === '/api/customer/billing-estimate' && req.method === 'GET') {
+              const user = currentUser();
+              if (!user?.customerId) return sendJson(403, { error: 'Customer access required.' });
+              return sendJson(200, { billingEstimate: billingEstimateFor(user.customerId) });
+            }
+
+            if (req.url === '/api/customer/packie-protection' && req.method === 'PATCH') {
+              const user = currentUser();
+              if (!user) return sendJson(401, { error: 'Authentication required.' });
+              const body = await readBody();
+              const result = setPackieProtection(user, Boolean(body.enabled));
+              if (!result.ok) return sendJson(result.status, { error: result.error });
+              return sendJson(200, result);
+            }
+
+            if (req.url === '/api/customer/blocked-numbers' && req.method === 'POST') {
+              const user = currentUser();
+              if (!user) return sendJson(401, { error: 'Authentication required.' });
+              const body = await readBody();
+              if (!body.phoneNumber) return sendJson(400, { error: 'Phone number is required.' });
+              const result = blockNumber(user, body.phoneNumber);
+              if (!result.ok) return sendJson(result.status, { error: result.error });
+              return sendJson(201, result);
+            }
+
+            if (req.url?.startsWith('/api/customer/blocked-numbers/') && req.method === 'DELETE') {
+              const user = currentUser();
+              if (!user) return sendJson(401, { error: 'Authentication required.' });
+              const blockedNumberId = decodeURIComponent(req.url.split('/').pop() || '');
+              const result = unblockNumber(user, blockedNumberId);
+              if (!result.ok) return sendJson(result.status, { error: result.error });
+              return sendJson(200, { ok: true });
+            }
+
+            if (req.url === '/api/admin/seed-summary' && req.method === 'GET') {
+              const user = currentUser();
+              if (!user) return sendJson(401, { error: 'Authentication required.' });
+              if (user.role !== 'admin') return sendJson(403, { error: 'Admin access required.' });
+              return sendJson(200, getSeedSummary());
+            }
+
             // Secure server-side mail sending endpoint
             if (req.url === '/api/send-email' && req.method === 'POST') {
               res.setHeader('Content-Type', 'application/json');
               
               // Helper to parse JSON body from incoming Node request stream
-              const body = await new Promise<any>((resolve) => {
-                let data = '';
-                req.on('data', chunk => { data += chunk; });
-                req.on('end', () => {
-                  try { resolve(JSON.parse(data)); }
-                  catch { resolve({}); }
-                });
-              });
+              const body = await readBody();
 
               const { to, subject, html } = body;
 

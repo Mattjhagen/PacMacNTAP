@@ -19,11 +19,10 @@ export default function Navbar() {
   }, []);
 
   const menuItems = [
-    { label: 'Plans', to: '/plans' },
-    { label: 'Devices', to: '/phones' },
-    { label: 'PackieAI', to: '/packieai' },
-    { label: 'AI Billing', to: '/ai-billing' },
-    { label: 'Support', to: '/support' },
+    { label: 'Home', to: '/' },
+    { label: 'Sign In', to: '/signin' },
+    { label: 'Customer Dashboard', to: '/dashboard' },
+    { label: 'Admin Dashboard', to: '/admin' },
   ];
 
   return (
@@ -78,10 +77,10 @@ export default function Navbar() {
                   {user.name || user.email?.split('@')[0]}
                 </span>
                 <Link
-                  to="/dashboard"
+                  to={user.role === 'admin' ? '/admin' : '/dashboard'}
                   className="px-3.5 py-1.5 text-xs font-mono border border-white/10 hover:border-white/20 rounded hover:bg-white/5 text-white transition-colors"
                 >
-                  DASHBOARD
+                  {user.role === 'admin' ? 'ADMIN' : 'DASHBOARD'}
                 </Link>
                 <button
                   onClick={signOut}
@@ -92,7 +91,7 @@ export default function Navbar() {
               </div>
             ) : (
               <Link
-                to="/login"
+                to="/signin"
                 className="px-4.5 py-1.5 text-xs font-mono font-semibold tracking-tight text-black bg-white hover:bg-brand-gray-200 rounded transition-all shadow-[0_0_15px_rgba(255,255,255,0.1)] hover:shadow-[0_0_20px_rgba(255,255,255,0.2)] flex items-center gap-1.5"
               >
                 SIGN IN
@@ -145,11 +144,11 @@ export default function Navbar() {
                     Member: {user.name || user.email}
                   </div>
                   <Link
-                    to="/dashboard"
+                    to={user.role === 'admin' ? '/admin' : '/dashboard'}
                     onClick={() => setIsOpen(false)}
                     className="w-full text-center py-3 text-sm font-semibold text-black bg-white rounded-lg"
                   >
-                    Dashboard
+                    {user.role === 'admin' ? 'Admin Dashboard' : 'Customer Dashboard'}
                   </Link>
                   <button
                     onClick={() => {
@@ -163,7 +162,7 @@ export default function Navbar() {
                 </>
               ) : (
                 <Link
-                  to="/login"
+                  to="/signin"
                   onClick={() => setIsOpen(false)}
                   className="w-full text-center py-3 text-sm font-semibold text-black bg-white rounded-lg"
                 >

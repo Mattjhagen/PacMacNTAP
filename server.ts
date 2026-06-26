@@ -2,6 +2,19 @@ import express from 'express';
 import path from 'path';
 import dotenv from 'dotenv';
 import { fileURLToPath } from 'url';
+import {
+  billingEstimateFor,
+  blockNumber,
+  clearSessionCookie,
+  getCustomerDashboard,
+  getSeedSummary,
+  getSessionUser,
+  login,
+  sessionCookie,
+  setPackieProtection,
+  signup,
+  unblockNumber
+} from './server/pacmacBackend';
 
 // Load environment variables
 dotenv.config();
@@ -42,6 +55,98 @@ function validateServerStartup() {
 }
 
 app.use(express.json());
+
+function requireSession(req: express.Request, res: express.Response) {
+  const user = getSessionUser(req.headers.cookie);
+  if (!user) {
+    res.status(401).json({ error: 'Authentication required.' });
+    return null;
+  }
+  return user;
+}
+
+app.post('/api/auth/login', (req, res) => {
+  const { email, password } = req.body || {};
+  if (!email || !password) return res.status(400).json({ error: 'Email and password are required.' });
+  const result = login(email, password);
+  if (!result.ok) return res.status(401).json({ error: result.error });
+  res.setHeader('Set-Cookie', sessionCookie(result.token));
+  return res.status(200).json({ user: result.user });
+});
+
+app.post('/api/auth/signup', (req, res) => {
+  const { name, email, password, phoneNumber } = req.body || {};
+  if (!name || !email || !password) return res.status(400).json({ error: 'Name, email, and password are required.' });
+  if (String(password).length < 8) return res.status(400).json({ error: 'Password must be at least 8 characters.' });
+  const result = signup({ name, email, password, phoneNumber });
+  if (!result.ok) return res.status(409).json({ error: result.error });
+  res.setHeader('Set-Cookie', sessionCookie(result.token));
+  return res.status(201).json({ user: result.user });
+});
+
+app.post('/api/auth/logout', (_req, res) => {
+  res.setHeader('Set-Cookie', clearSessionCookie());
+  return res.status(200).json({ ok: true });
+});
+
+app.get('/api/auth/me', (req, res) => {
+  return res.status(200).json({ user: getSessionUser(req.headers.cookie) });
+});
+
+app.get('/api/customer/dashboard', (req, res) => {
+  const user = requireSession(req, res);
+  if (!user) return;
+  const result = getCustomerDashboard(user);
+  if (!result.ok) return res.status(result.status).json({ error: result.error });
+  return res.status(200).json(result.data);
+});
+
+app.get('/api/customer/usage-events', (req, res) => {
+  const user = requireSession(req, res);
+  if (!user) return;
+  const result = getCustomerDashboard(user);
+  if (!result.ok) return res.status(result.status).json({ error: result.error });
+  return res.status(200).json({ usageEvents: result.data.usageEvents });
+});
+
+app.get('/api/customer/billing-estimate', (req, res) => {
+  const user = requireSession(req, res);
+  if (!user?.customerId) return res.status(403).json({ error: 'Customer access required.' });
+  return res.status(200).json({ billingEstimate: billingEstimateFor(user.customerId) });
+});
+
+app.patch('/api/customer/packie-protection', (req, res) => {
+  const user = requireSession(req, res);
+  if (!user) return;
+  const result = setPackieProtection(user, Boolean(req.body?.enabled));
+  if (!result.ok) return res.status(result.status).json({ error: result.error });
+  return res.status(200).json(result);
+});
+
+app.post('/api/customer/blocked-numbers', (req, res) => {
+  const user = requireSession(req, res);
+  if (!user) return;
+  const { phoneNumber } = req.body || {};
+  if (!phoneNumber) return res.status(400).json({ error: 'Phone number is required.' });
+  const result = blockNumber(user, phoneNumber);
+  if (!result.ok) return res.status(result.status).json({ error: result.error });
+  return res.status(201).json(result);
+});
+
+app.delete('/api/customer/blocked-numbers/:id', (req, res) => {
+  const user = requireSession(req, res);
+  if (!user) return;
+  const result = unblockNumber(user, req.params.id);
+  if (!result.ok) return res.status(result.status).json({ error: result.error });
+  return res.status(200).json({ ok: true });
+});
+
+app.get('/api/admin/seed-summary', (req, res) => {
+  const user = requireSession(req, res);
+  if (!user) return;
+  if (user.role !== 'admin') return res.status(403).json({ error: 'Admin access required.' });
+  return res.status(200).json(getSeedSummary());
+});
 
 type ServerRiskLevel = 'low' | 'medium' | 'high';
 

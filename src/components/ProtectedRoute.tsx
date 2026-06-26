@@ -4,9 +4,10 @@ import { useAuth } from '../context/AuthContext';
 
 interface ProtectedRouteProps {
   children: React.ReactNode;
+  role?: 'customer' | 'admin';
 }
 
-export default function ProtectedRoute({ children }: ProtectedRouteProps) {
+export default function ProtectedRoute({ children, role }: ProtectedRouteProps) {
   const { user, loading } = useAuth();
   const location = useLocation();
 
@@ -32,7 +33,11 @@ export default function ProtectedRoute({ children }: ProtectedRouteProps) {
 
   if (!user) {
     // Redirect to login, storing the requested location in state
-    return <Navigate to="/login" replace state={{ from: location }} />;
+    return <Navigate to="/signin" replace state={{ from: location }} />;
+  }
+
+  if (role && user.role !== role) {
+    return <Navigate to={user.role === 'admin' ? '/admin' : '/dashboard'} replace />;
   }
 
   return <>{children}</>;

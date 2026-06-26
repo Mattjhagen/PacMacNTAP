@@ -16,7 +16,8 @@ const ESIM = lazy(() => import('./pages/ESIM'));
 const AIBilling = lazy(() => import('./pages/AIBilling'));
 const PackieAI = lazy(() => import('./pages/PackieAI'));
 const Support = lazy(() => import('./pages/Support'));
-const Login = lazy(() => import('./pages/Login'));
+const SignIn = lazy(() => import('./pages/SignIn'));
+const SignUp = lazy(() => import('./pages/SignUp'));
 const Dashboard = lazy(() => import('./pages/Dashboard'));
 const Checkout = lazy(() => import('./pages/Checkout'));
 const Admin = lazy(() => import('./pages/Admin'));
@@ -79,11 +80,13 @@ export default function App() {
                     </ProtectedRoute>
                   } 
                 />
-                <Route path="/login" element={<Login />} />
+                <Route path="/login" element={<SignIn />} />
+                <Route path="/signin" element={<SignIn />} />
+                <Route path="/signup" element={<SignUp />} />
                 <Route 
                   path="/dashboard" 
                   element={
-                    <ProtectedRoute>
+                    <ProtectedRoute role="customer">
                       <Dashboard />
                     </ProtectedRoute>
                   } 
@@ -91,12 +94,19 @@ export default function App() {
                 <Route 
                   path="/checkout" 
                   element={
-                    <ProtectedRoute>
+                    <ProtectedRoute role="customer">
                       <Checkout />
                     </ProtectedRoute>
                   } 
                 />
-                <Route path="/admin" element={<Admin />} />
+                <Route
+                  path="/admin"
+                  element={
+                    <ProtectedRoute role="admin">
+                      <Admin />
+                    </ProtectedRoute>
+                  }
+                />
                 {/* Fallback wildcard to prevent blank-page route failures */}
                 <Route path="*" element={<Home />} />
               </Routes>

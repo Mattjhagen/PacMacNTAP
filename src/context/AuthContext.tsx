@@ -1,5 +1,4 @@
 import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
-import { supabase } from '../utils/supabaseClient';
 import { authService, UserProfile } from '../services/authService';
 
 interface AuthContextType {
@@ -21,21 +20,16 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     try {
       const isLoggedOut = localStorage.getItem('pacmac_user_logged_out') === 'true';
       if (isLoggedOut) {
-        setUser(null);
-        setSession(null);
-        setLoading(false);
-        return;
+        localStorage.removeItem('pacmac_user_logged_out');
       }
 
-      const { data } = await supabase.auth.getSession();
-      const currentSession = data?.session || null;
-      setSession(currentSession);
-
-      if (currentSession) {
-        const profile = await authService.getCurrentUser();
+      const profile = await authService.getCurrentUser();
+      if (profile) {
         setUser(profile);
+        setSession({ user: profile });
       } else {
         setUser(null);
+        setSession(null);
       }
     } catch (err) {
       console.warn('[AuthContext] Failed to load session or profile:', err);
@@ -62,19 +56,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   useEffect(() => {
     fetchProfileAndSession();
 
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, currentSession) => {
-      setSession(currentSession);
-      
-      if (currentSession) {
-        localStorage.removeItem('pacmac_user_logged_out');
-        const profile = await authService.getCurrentUser();
-        setUser(profile);
-      } else {
-        setUser(null);
-      }
-      setLoading(false);
-    });
-
     const handleCustomAuthChange = () => {
       fetchProfileAndSession();
     };
@@ -82,7 +63,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     window.addEventListener('pacmac-auth-change', handleCustomAuthChange);
 
     return () => {
-      subscription.unsubscribe();
       window.removeEventListener('pacmac-auth-change', handleCustomAuthChange);
     };
   }, [fetchProfileAndSession]);

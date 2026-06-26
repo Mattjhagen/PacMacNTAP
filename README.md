@@ -7,8 +7,8 @@ PacMac Wireless OS manages customer accounts, usage-based billing, SIM/eSIM life
 ## Stack
 
 - Frontend: React, Vite, Tailwind CSS
-- Server: Express for production static serving and mock webhook endpoints
-- Local data: browser localStorage plus in-memory server webhook state
+- Server: Express for production static serving, JWT auth, customer APIs, and mock webhook endpoints
+- Local data: backend in-memory seed stores plus browser localStorage for the admin mock carrier console
 - Future data layer: Supabase/PostgreSQL-ready schema in `supabase/schema.sql`
 - Payments: Stripe-ready invoice estimate shape, mocked for this MVP
 - Carrier layer: `MockCarrierAdapter` behind a typed adapter interface
@@ -27,9 +27,32 @@ Useful routes:
 
 - Customer dashboard: `/#/dashboard`
 - Admin console: `/#/admin`
-- Login: `/#/login`
+- Sign in: `/#/signin`
+- Sign up: `/#/signup`
 
-For local login, set `VITE_DEV_AUTH_BYPASS=true` and use `demo@pacmac.com`; the bypass passcode is `123456`.
+Demo credentials:
+
+- Customer: `customer@pacmacmobile.com` / `password123`
+- Admin: `admin@pacmacmobile.com` / `admin123`
+
+## Authentication
+
+Authentication is backend-backed. The browser posts credentials to `/api/auth/login`; the server verifies PBKDF2-hashed passwords and issues a signed JWT in an HTTP-only `pacmac_session` cookie.
+
+Auth routes:
+
+- `POST /api/auth/login`
+- `POST /api/auth/logout`
+- `POST /api/auth/signup`
+- `GET /api/auth/me`
+
+Role behavior:
+
+- Customer login redirects to `/#/dashboard`
+- Admin login redirects to `/#/admin`
+- Unauthenticated users who open `/#/dashboard` are sent to `/#/signin`
+- Customer accounts cannot access `/#/admin`
+- New signups are customer accounts by default
 
 ## Billing Model
 
@@ -80,6 +103,35 @@ Sample incoming call payload:
 
 High-risk calls are automatically blocked. Medium-risk calls create warnings unless the customer's auto-block preference is enabled.
 
+## Customer API
+
+The customer dashboard is populated from the logged-in user's JWT session:
+
+- `GET /api/customer/dashboard`
+- `GET /api/customer/usage-events`
+- `GET /api/customer/billing-estimate`
+- `PATCH /api/customer/packie-protection`
+- `POST /api/customer/blocked-numbers`
+- `DELETE /api/customer/blocked-numbers/:id`
+
+The API only returns data for the customer id embedded in the verified backend session.
+
+## Seed Data
+
+Seed data lives in `server/pacmacBackend.ts` and includes:
+
+- one admin user
+- one customer user
+- one active wireless line
+- one eSIM record
+- current billing cycle
+- usage events
+- billing estimate inputs
+- PackieAI fraud alerts
+- blocked numbers
+
+To reset seed state during development, restart the dev server.
+
 ## Data Models
 
 The MVP includes typed models for:
@@ -124,7 +176,12 @@ npm test
 
 Current coverage focuses on:
 
+- Customer and admin login
+- Role protection and missing session behavior
+- Customer dashboard scoping
 - Dynamic billing calculation and monthly cap
+- PackieAI toggle
+- Block and unblock number actions
 - PackieAI fraud risk routing
 - Mock carrier provisioning and activation
 - High-risk automatic blocking
