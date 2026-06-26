@@ -35,6 +35,23 @@ function validateServerStartup() {
   console.log("====================================\n");
 }
 app.use(express.json());
+var serverBlockedNumbers = /* @__PURE__ */ new Map();
+var serverFraudAlerts = [];
+function analyzePackieCall(payload) {
+  const text = `${payload.callerNumber || ""} ${payload.transcriptText || ""} ${payload.transcriptUrl || ""}`.toLowerCase();
+  const highRiskTerms = ["gift card", "wire transfer", "crypto", "password", "social security", "bank login", "urgent payment"];
+  const mediumRiskTerms = ["verify account", "carrier support", "limited time", "unknown caller", "payment issue"];
+  if (highRiskTerms.some((term) => text.includes(term)) || String(payload.callerNumber || "").includes("888")) {
+    return { riskLevel: "high", notes: "High-risk scam indicators detected by PackieAI mock analyzer." };
+  }
+  if (mediumRiskTerms.some((term) => text.includes(term)) || String(payload.callerNumber || "").includes("866")) {
+    return { riskLevel: "medium", notes: "Medium-risk social-engineering pattern detected by PackieAI mock analyzer." };
+  }
+  return { riskLevel: "low", notes: "No material scam indicators detected by PackieAI mock analyzer." };
+}
+function customerKey(req) {
+  return String(req.headers["x-pacmac-customer-id"] || req.body?.customerId || req.query.customerId || "demo@pacmac.com");
+}
 app.post("/api/send-email", async (req, res) => {
   const { to, subject, html } = req.body;
   if (!to || !subject || !html) {
@@ -72,6 +89,59 @@ app.post("/api/send-email", async (req, res) => {
   } catch (err) {
     return res.status(500).json({ error: err.message || "Internal connection failure" });
   }
+});
+app.post("/webhooks/incoming-call", (req, res) => {
+  const { callerNumber, calledNumber } = req.body || {};
+  if (!callerNumber || !calledNumber) {
+    return res.status(400).json({ error: "Missing callerNumber or calledNumber" });
+  }
+  const analysis = analyzePackieCall(req.body);
+  const key = String(calledNumber);
+  const shouldBlock = analysis.riskLevel === "high";
+  const alert = {
+    id: `fraud_${Date.now()}`,
+    customerId: key,
+    callerNumber,
+    calledNumber,
+    riskLevel: analysis.riskLevel,
+    action: shouldBlock ? "blocked" : analysis.riskLevel === "medium" ? "warned" : "allowed",
+    transcriptUrl: req.body.transcriptUrl,
+    audioUrl: req.body.audioUrl,
+    notes: analysis.notes,
+    createdAt: req.body.timestamp || (/* @__PURE__ */ new Date()).toISOString()
+  };
+  serverFraudAlerts.unshift(alert);
+  if (shouldBlock) {
+    const blocked = serverBlockedNumbers.get(key) || /* @__PURE__ */ new Set();
+    blocked.add(callerNumber);
+    serverBlockedNumbers.set(key, blocked);
+  }
+  return res.status(200).json(alert);
+});
+app.post("/webhooks/call-analysis", (req, res) => {
+  return res.status(200).json(analyzePackieCall(req.body || {}));
+});
+app.get("/customer/fraud-alerts", (req, res) => {
+  const key = customerKey(req);
+  return res.status(200).json(serverFraudAlerts.filter((alert) => alert.customerId === key || alert.calledNumber === key));
+});
+app.post("/customer/block-number", (req, res) => {
+  const key = customerKey(req);
+  const { phoneNumber } = req.body || {};
+  if (!phoneNumber) return res.status(400).json({ error: "Missing phoneNumber" });
+  const blocked = serverBlockedNumbers.get(key) || /* @__PURE__ */ new Set();
+  blocked.add(phoneNumber);
+  serverBlockedNumbers.set(key, blocked);
+  return res.status(200).json({ customerId: key, phoneNumber, blocked: true });
+});
+app.post("/customer/unblock-number", (req, res) => {
+  const key = customerKey(req);
+  const { phoneNumber } = req.body || {};
+  if (!phoneNumber) return res.status(400).json({ error: "Missing phoneNumber" });
+  const blocked = serverBlockedNumbers.get(key) || /* @__PURE__ */ new Set();
+  blocked.delete(phoneNumber);
+  serverBlockedNumbers.set(key, blocked);
+  return res.status(200).json({ customerId: key, phoneNumber, blocked: false });
 });
 app.use(express.static(path.join(__dirname, "dist")));
 app.get("*", (req, res) => {

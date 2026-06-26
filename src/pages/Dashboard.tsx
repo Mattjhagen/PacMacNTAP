@@ -7,6 +7,7 @@ import { usageService, UsageReport } from '../services/usageService';
 import { supportService, BlockedCallLog } from '../services/supportService';
 import { billingService } from '../services/billingService';
 import { supabase, isLiveDb } from '../utils/supabaseClient';
+import { wirelessOsService } from '../services/wirelessOsService';
 
 export default function Dashboard() {
   const { user, signOut, refreshSession } = useAuth();
@@ -20,6 +21,7 @@ export default function Dashboard() {
   const [diagnosticsLog, setDiagnosticsLog] = useState<string[]>([]);
   const [dataLoading, setDataLoading] = useState(true);
   const [dashboardError, setDashboardError] = useState<string | null>(null);
+  const [wirelessOsVersion, setWirelessOsVersion] = useState(0);
   
   const navigate = useNavigate();
 
@@ -150,6 +152,12 @@ export default function Dashboard() {
     }
   }, [user, refreshSession]);
 
+  useEffect(() => {
+    const handler = () => setWirelessOsVersion((version) => version + 1);
+    window.addEventListener('pacmac-wireless-os-change', handler);
+    return () => window.removeEventListener('pacmac-wireless-os-change', handler);
+  }, []);
+
   const handleSignOut = async () => {
     await signOut();
     navigate('/');
@@ -208,6 +216,12 @@ export default function Dashboard() {
   }
 
   const billingInfo = billingService.getSavingsInfo(usage.dataUsedGb);
+  const wirelessCustomer = wirelessOsService.getCustomer(user.email);
+  const wirelessEstimate = wirelessOsService.getInvoiceEstimate(wirelessCustomer.id);
+  const wirelessState = wirelessOsService.getState();
+  const customerAlerts = wirelessState.fraudAlerts.filter((alert) => alert.customerId === wirelessCustomer.id);
+  const customerBlockedNumbers = wirelessState.blockedNumbers.filter((blocked) => blocked.customerId === wirelessCustomer.id);
+  void wirelessOsVersion;
 
   return (
     <div className="relative min-h-screen bg-black text-white overflow-hidden pb-16 sm:pb-24 font-sans font-light">
@@ -278,6 +292,104 @@ export default function Dashboard() {
             </button>
           </div>
         )}
+
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 mb-8">
+          <div className="lg:col-span-7 border border-white/5 bg-neutral-950/40 rounded-xl p-6">
+            <div className="flex items-start justify-between gap-4 border-b border-white/5 pb-4 mb-5">
+              <div>
+                <span className="text-[9px] font-mono text-brand-gray-500 uppercase tracking-widest">
+                  PacMac Wireless OS
+                </span>
+                <h2 className="font-display text-xl font-semibold text-white mt-1">
+                  Usage-based billing, live this cycle
+                </h2>
+              </div>
+              <span className="rounded border border-emerald-300/20 bg-emerald-300/10 px-2 py-1 text-[10px] font-mono text-emerald-200 uppercase">
+                {wirelessCustomer.accountStatus}
+              </span>
+            </div>
+
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+              <div className="rounded-lg border border-white/5 bg-black/20 p-4">
+                <span className="text-[9px] font-mono text-brand-gray-500 uppercase tracking-widest">Data Used</span>
+                <strong className="block mt-2 text-2xl font-display text-white">{wirelessEstimate.usageGb.toFixed(1)} GB</strong>
+              </div>
+              <div className="rounded-lg border border-white/5 bg-black/20 p-4">
+                <span className="text-[9px] font-mono text-brand-gray-500 uppercase tracking-widest">Estimated Bill</span>
+                <strong className="block mt-2 text-2xl font-display text-white">${wirelessEstimate.estimatedCharge.toFixed(2)}</strong>
+              </div>
+              <div className="rounded-lg border border-white/5 bg-black/20 p-4">
+                <span className="text-[9px] font-mono text-brand-gray-500 uppercase tracking-widest">SIM/eSIM</span>
+                <strong className="block mt-2 text-2xl font-display text-white capitalize">{wirelessCustomer.simStatus}</strong>
+              </div>
+            </div>
+
+            <div className="mt-5">
+              <div className="flex justify-between text-[10px] font-mono text-brand-gray-500 uppercase tracking-widest mb-2">
+                <span>$30 cap progress</span>
+                <span>{wirelessEstimate.capProgress}%</span>
+              </div>
+              <div className="h-2 rounded-full bg-white/8 overflow-hidden">
+                <div
+                  className="h-full bg-gradient-to-r from-emerald-300 to-cyan-300"
+                  style={{ width: `${wirelessEstimate.capProgress}%` }}
+                />
+              </div>
+            </div>
+          </div>
+
+          <div className="lg:col-span-5 border border-white/5 bg-neutral-950/40 rounded-xl p-6">
+            <div className="flex items-start justify-between gap-4 border-b border-white/5 pb-4 mb-4">
+              <div>
+                <span className="text-[9px] font-mono text-brand-gray-500 uppercase tracking-widest">
+                  PackieAI Protection
+                </span>
+                <h2 className="font-display text-xl font-semibold text-white mt-1">
+                  Alerts and blocked numbers
+                </h2>
+              </div>
+              <Shield className="w-5 h-5 text-cyan-200" />
+            </div>
+
+            <div className="space-y-3 max-h-64 overflow-auto pr-1">
+              {customerAlerts.slice(0, 3).map((alert) => (
+                <div key={alert.id} className="rounded border border-white/5 bg-black/20 p-3 text-xs">
+                  <div className="flex justify-between gap-2">
+                    <span className="font-mono text-white">{alert.callerNumber}</span>
+                    <span className="font-mono uppercase text-cyan-200">{alert.riskLevel}</span>
+                  </div>
+                  <p className="text-brand-gray-400 mt-1">{alert.notes}</p>
+                </div>
+              ))}
+              {customerAlerts.length === 0 && (
+                <p className="text-xs text-brand-gray-400">No PackieAI alerts this cycle.</p>
+              )}
+            </div>
+
+            <div className="mt-4 pt-4 border-t border-white/5">
+              <span className="text-[9px] font-mono text-brand-gray-500 uppercase tracking-widest">
+                Blocked Numbers
+              </span>
+              <div className="mt-2 flex flex-wrap gap-2">
+                {customerBlockedNumbers.map((blocked) => (
+                  <button
+                    key={blocked.id}
+                    onClick={() => {
+                      wirelessOsService.unblockNumber(blocked.id);
+                      setWirelessOsVersion((version) => version + 1);
+                    }}
+                    className="rounded border border-red-300/20 bg-red-300/10 px-2 py-1 text-[10px] font-mono text-red-100"
+                  >
+                    {blocked.phoneNumber}
+                  </button>
+                ))}
+                {customerBlockedNumbers.length === 0 && (
+                  <span className="text-xs text-brand-gray-400">No blocked numbers.</span>
+                )}
+              </div>
+            </div>
+          </div>
+        </div>
 
         {/* Dashboard Grid (Spotify Wrapped style layout) */}
         <div className="grid grid-cols-1 md:grid-cols-12 gap-6 items-stretch mb-8">

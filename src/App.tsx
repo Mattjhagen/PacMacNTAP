@@ -96,7 +96,7 @@ export default function App() {
                     </ProtectedRoute>
                   } 
                 />
-                {!import.meta.env.PROD && <Route path="/admin" element={<Admin />} />}
+                <Route path="/admin" element={<Admin />} />
                 {/* Fallback wildcard to prevent blank-page route failures */}
                 <Route path="*" element={<Home />} />
               </Routes>

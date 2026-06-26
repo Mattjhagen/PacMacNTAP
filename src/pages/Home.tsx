@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { motion } from 'motion/react';
-import { ChevronRight, Radio, Shield, HelpCircle, ArrowRight, Smartphone, Lock, Info, Send } from 'lucide-react';
+import { ChevronRight, Radio, Shield, HelpCircle, ArrowRight, Smartphone, Lock, Info, Send, RefreshCw } from 'lucide-react';
 import { Link } from 'react-router-dom';
 
 export default function Home() {

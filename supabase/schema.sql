@@ -132,3 +132,114 @@ CREATE POLICY "Allow users to view their own devices" ON public.devices
 CREATE POLICY "Allow users to update their own devices" ON public.devices
   FOR UPDATE USING (auth.uid() = profile_id);
 
+-- 8. PacMac Wireless OS roles and customer profiles
+CREATE TABLE IF NOT EXISTS public.user_roles (
+  user_id UUID REFERENCES auth.users ON DELETE CASCADE PRIMARY KEY,
+  role TEXT DEFAULT 'customer' CHECK (role IN ('admin', 'customer')),
+  created_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now()) NOT NULL
+);
+
+CREATE TABLE IF NOT EXISTS public.customer_profiles (
+  id UUID DEFAULT uuid_generate_v4() PRIMARY KEY,
+  user_id UUID REFERENCES auth.users ON DELETE SET NULL,
+  name TEXT NOT NULL,
+  email TEXT UNIQUE NOT NULL,
+  phone_number TEXT UNIQUE NOT NULL,
+  account_status TEXT DEFAULT 'pending_activation' CHECK (account_status IN ('active', 'pending_activation', 'suspended', 'deactivated')),
+  sim_status TEXT DEFAULT 'unassigned' CHECK (sim_status IN ('unassigned', 'provisioned', 'active', 'suspended', 'deactivated')),
+  monthly_data_usage_gb NUMERIC(8, 2) DEFAULT 0 NOT NULL,
+  fraud_protection_status TEXT DEFAULT 'enabled' CHECK (fraud_protection_status IN ('enabled', 'disabled')),
+  auto_block_medium_risk BOOLEAN DEFAULT FALSE NOT NULL,
+  created_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now()) NOT NULL,
+  updated_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now()) NOT NULL
+);
+
+CREATE TABLE IF NOT EXISTS public.wireless_lines (
+  id UUID DEFAULT uuid_generate_v4() PRIMARY KEY,
+  customer_id UUID REFERENCES public.customer_profiles(id) ON DELETE CASCADE NOT NULL,
+  phone_number TEXT UNIQUE NOT NULL,
+  status TEXT DEFAULT 'unassigned' CHECK (status IN ('unassigned', 'provisioned', 'active', 'suspended', 'deactivated')),
+  activated_at TIMESTAMP WITH TIME ZONE,
+  created_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now()) NOT NULL
+);
+
+CREATE TABLE IF NOT EXISTS public.sim_cards (
+  id UUID DEFAULT uuid_generate_v4() PRIMARY KEY,
+  customer_id UUID REFERENCES public.customer_profiles(id) ON DELETE SET NULL,
+  line_id UUID REFERENCES public.wireless_lines(id) ON DELETE SET NULL,
+  iccid TEXT UNIQUE NOT NULL,
+  eid TEXT,
+  sim_type TEXT DEFAULT 'eSIM' CHECK (sim_type IN ('SIM', 'eSIM')),
+  status TEXT DEFAULT 'provisioned' CHECK (status IN ('unassigned', 'provisioned', 'active', 'suspended', 'deactivated')),
+  qr_code_url TEXT,
+  created_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now()) NOT NULL
+);
+
+CREATE TABLE IF NOT EXISTS public.usage_events (
+  id UUID DEFAULT uuid_generate_v4() PRIMARY KEY,
+  customer_id UUID REFERENCES public.customer_profiles(id) ON DELETE CASCADE NOT NULL,
+  line_id UUID REFERENCES public.wireless_lines(id) ON DELETE CASCADE NOT NULL,
+  gb_used NUMERIC(8, 2) NOT NULL,
+  source TEXT DEFAULT 'carrier_mock' CHECK (source IN ('carrier_mock', 'admin_simulator', 'webhook')),
+  created_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now()) NOT NULL
+);
+
+CREATE TABLE IF NOT EXISTS public.billing_cycles (
+  id UUID DEFAULT uuid_generate_v4() PRIMARY KEY,
+  customer_id UUID REFERENCES public.customer_profiles(id) ON DELETE CASCADE NOT NULL,
+  starts_at TIMESTAMP WITH TIME ZONE NOT NULL,
+  ends_at TIMESTAMP WITH TIME ZONE NOT NULL,
+  status TEXT DEFAULT 'open' CHECK (status IN ('open', 'closed')),
+  created_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now()) NOT NULL
+);
+
+CREATE TABLE IF NOT EXISTS public.invoice_estimates (
+  id UUID DEFAULT uuid_generate_v4() PRIMARY KEY,
+  customer_id UUID REFERENCES public.customer_profiles(id) ON DELETE CASCADE NOT NULL,
+  billing_cycle_id UUID REFERENCES public.billing_cycles(id) ON DELETE CASCADE NOT NULL,
+  usage_gb NUMERIC(8, 2) NOT NULL,
+  price_per_gb NUMERIC(8, 2) NOT NULL,
+  monthly_cap NUMERIC(8, 2) NOT NULL,
+  minimum_charge NUMERIC(8, 2) DEFAULT 0 NOT NULL,
+  estimated_charge NUMERIC(8, 2) NOT NULL,
+  created_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now()) NOT NULL
+);
+
+CREATE TABLE IF NOT EXISTS public.blocked_numbers (
+  id UUID DEFAULT uuid_generate_v4() PRIMARY KEY,
+  customer_id UUID REFERENCES public.customer_profiles(id) ON DELETE CASCADE NOT NULL,
+  phone_number TEXT NOT NULL,
+  reason TEXT,
+  created_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now()) NOT NULL,
+  UNIQUE(customer_id, phone_number)
+);
+
+CREATE TABLE IF NOT EXISTS public.fraud_alerts (
+  id UUID DEFAULT uuid_generate_v4() PRIMARY KEY,
+  customer_id UUID REFERENCES public.customer_profiles(id) ON DELETE CASCADE NOT NULL,
+  caller_number TEXT NOT NULL,
+  called_number TEXT NOT NULL,
+  risk_level TEXT NOT NULL CHECK (risk_level IN ('low', 'medium', 'high')),
+  action TEXT NOT NULL CHECK (action IN ('allowed', 'warned', 'blocked')),
+  transcript_url TEXT,
+  audio_url TEXT,
+  notes TEXT,
+  created_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now()) NOT NULL
+);
+
+CREATE TABLE IF NOT EXISTS public.carrier_events (
+  id UUID DEFAULT uuid_generate_v4() PRIMARY KEY,
+  customer_id UUID REFERENCES public.customer_profiles(id) ON DELETE CASCADE NOT NULL,
+  line_id UUID REFERENCES public.wireless_lines(id) ON DELETE SET NULL,
+  event_type TEXT NOT NULL,
+  payload JSONB DEFAULT '{}'::jsonb NOT NULL,
+  created_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now()) NOT NULL
+);
+
+CREATE TABLE IF NOT EXISTS public.admin_audit_logs (
+  id UUID DEFAULT uuid_generate_v4() PRIMARY KEY,
+  actor UUID REFERENCES auth.users ON DELETE SET NULL,
+  action TEXT NOT NULL,
+  target_id TEXT NOT NULL,
+  created_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now()) NOT NULL
+);
