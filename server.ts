@@ -3,12 +3,13 @@ import path from 'path';
 import dotenv from 'dotenv';
 import { fileURLToPath } from 'url';
 import {
-  billingEstimateFor,
+  billingEstimateForCustomer,
   blockNumber,
   clearSessionCookie,
   getCustomerDashboard,
   getSeedSummary,
   getSessionUser,
+  joinWaitlist,
   login,
   sessionCookie,
   setPackieProtection,
@@ -65,20 +66,20 @@ function requireSession(req: express.Request, res: express.Response) {
   return user;
 }
 
-app.post('/api/auth/login', (req, res) => {
+app.post('/api/auth/login', async (req, res) => {
   const { email, password } = req.body || {};
   if (!email || !password) return res.status(400).json({ error: 'Email and password are required.' });
-  const result = login(email, password);
+  const result = await login(email, password);
   if (!result.ok) return res.status(401).json({ error: result.error });
   res.setHeader('Set-Cookie', sessionCookie(result.token));
   return res.status(200).json({ user: result.user });
 });
 
-app.post('/api/auth/signup', (req, res) => {
+app.post('/api/auth/signup', async (req, res) => {
   const { name, email, password, phoneNumber } = req.body || {};
   if (!name || !email || !password) return res.status(400).json({ error: 'Name, email, and password are required.' });
   if (String(password).length < 8) return res.status(400).json({ error: 'Password must be at least 8 characters.' });
-  const result = signup({ name, email, password, phoneNumber });
+  const result = await signup({ name, email, password, phoneNumber });
   if (!result.ok) return res.status(409).json({ error: result.error });
   res.setHeader('Set-Cookie', sessionCookie(result.token));
   return res.status(201).json({ user: result.user });
@@ -93,50 +94,50 @@ app.get('/api/auth/me', (req, res) => {
   return res.status(200).json({ user: getSessionUser(req.headers.cookie) });
 });
 
-app.get('/api/customer/dashboard', (req, res) => {
+app.get('/api/customer/dashboard', async (req, res) => {
   const user = requireSession(req, res);
   if (!user) return;
-  const result = getCustomerDashboard(user);
+  const result = await getCustomerDashboard(user);
   if (!result.ok) return res.status(result.status).json({ error: result.error });
   return res.status(200).json(result.data);
 });
 
-app.get('/api/customer/usage-events', (req, res) => {
+app.get('/api/customer/usage-events', async (req, res) => {
   const user = requireSession(req, res);
   if (!user) return;
-  const result = getCustomerDashboard(user);
+  const result = await getCustomerDashboard(user);
   if (!result.ok) return res.status(result.status).json({ error: result.error });
   return res.status(200).json({ usageEvents: result.data.usageEvents });
 });
 
-app.get('/api/customer/billing-estimate', (req, res) => {
+app.get('/api/customer/billing-estimate', async (req, res) => {
   const user = requireSession(req, res);
   if (!user?.customerId) return res.status(403).json({ error: 'Customer access required.' });
-  return res.status(200).json({ billingEstimate: billingEstimateFor(user.customerId) });
+  return res.status(200).json({ billingEstimate: await billingEstimateForCustomer(user.customerId) });
 });
 
-app.patch('/api/customer/packie-protection', (req, res) => {
+app.patch('/api/customer/packie-protection', async (req, res) => {
   const user = requireSession(req, res);
   if (!user) return;
-  const result = setPackieProtection(user, Boolean(req.body?.enabled));
+  const result = await setPackieProtection(user, Boolean(req.body?.enabled));
   if (!result.ok) return res.status(result.status).json({ error: result.error });
   return res.status(200).json(result);
 });
 
-app.post('/api/customer/blocked-numbers', (req, res) => {
+app.post('/api/customer/blocked-numbers', async (req, res) => {
   const user = requireSession(req, res);
   if (!user) return;
   const { phoneNumber } = req.body || {};
   if (!phoneNumber) return res.status(400).json({ error: 'Phone number is required.' });
-  const result = blockNumber(user, phoneNumber);
+  const result = await blockNumber(user, phoneNumber);
   if (!result.ok) return res.status(result.status).json({ error: result.error });
   return res.status(201).json(result);
 });
 
-app.delete('/api/customer/blocked-numbers/:id', (req, res) => {
+app.delete('/api/customer/blocked-numbers/:id', async (req, res) => {
   const user = requireSession(req, res);
   if (!user) return;
-  const result = unblockNumber(user, req.params.id);
+  const result = await unblockNumber(user, req.params.id);
   if (!result.ok) return res.status(result.status).json({ error: result.error });
   return res.status(200).json({ ok: true });
 });
@@ -146,6 +147,12 @@ app.get('/api/admin/seed-summary', (req, res) => {
   if (!user) return;
   if (user.role !== 'admin') return res.status(403).json({ error: 'Admin access required.' });
   return res.status(200).json(getSeedSummary());
+});
+
+app.post('/api/waitlist', async (req, res) => {
+  const result = await joinWaitlist({ name: req.body?.name, email: req.body?.email });
+  if (!result.ok) return res.status(result.status).json({ error: result.error });
+  return res.status(201).json(result.entry);
 });
 
 type ServerRiskLevel = 'low' | 'medium' | 'high';

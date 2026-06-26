@@ -8,37 +8,34 @@ export default function Home() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [submitStatus, setSubmitStatus] = useState<'idle' | 'success'>('idle');
   const [waitlistNum, setWaitlistNum] = useState(0);
+  const [waitlistError, setWaitlistError] = useState('');
 
-  const handleWaitlistSubmit = (e: React.FormEvent) => {
+  const handleWaitlistSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!waitlistEmail) return;
 
     setIsSubmitting(true);
-    
-    // Simulate lookup / write latency
-    setTimeout(() => {
-      const generatedNum = Math.floor(Math.random() * 450) + 2480;
-      
-      const newEntry = {
-        name: waitlistEmail.split('@')[0],
-        email: waitlistEmail,
-        date: new Date().toISOString(),
-        waitlistNumber: generatedNum,
-        status: "Active"
-      };
+    setWaitlistError('');
 
-      try {
-        const raw = localStorage.getItem('pacmac_waitlist_signups') || '[]';
-        const arr = JSON.parse(raw);
-        arr.unshift(newEntry);
-        localStorage.setItem('pacmac_waitlist_signups', JSON.stringify(arr));
-      } catch (err) {}
-
-      setWaitlistNum(generatedNum);
-      setIsSubmitting(false);
+    try {
+      const response = await fetch('/api/waitlist', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          name: waitlistEmail.split('@')[0],
+          email: waitlistEmail
+        })
+      });
+      const data = await response.json();
+      if (!response.ok) throw new Error(data.error || 'Unable to join waitlist.');
+      setWaitlistNum(data.waitlistNumber);
       setSubmitStatus('success');
       setWaitlistEmail('');
-    }, 1200);
+    } catch (err: any) {
+      setWaitlistError(err.message || 'Unable to join waitlist.');
+    } finally {
+      setIsSubmitting(false);
+    }
   };
   const containerVariants = {
     hidden: { opacity: 0 },
@@ -275,6 +272,11 @@ export default function Home() {
                   </>
                 )}
               </button>
+              {waitlistError && (
+                <p className="sm:col-span-2 text-xs text-red-200 border border-red-300/20 bg-red-300/10 rounded px-3 py-2">
+                  {waitlistError}
+                </p>
+              )}
             </form>
           )}
         </motion.div>

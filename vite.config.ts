@@ -3,12 +3,13 @@ import react from '@vitejs/plugin-react';
 import path from 'path';
 import { defineConfig, loadEnv } from 'vite';
 import {
-  billingEstimateFor,
+  billingEstimateForCustomer,
   blockNumber,
   clearSessionCookie,
   getCustomerDashboard,
   getSeedSummary,
   getSessionUser,
+  joinWaitlist,
   login,
   sessionCookie,
   setPackieProtection,
@@ -20,6 +21,9 @@ export default defineConfig(({ mode }) => {
   // Load environment variables (from .env.local, .env, etc.)
   const env = loadEnv(mode, process.cwd(), '');
   const resendApiKey = env.RESEND_API_KEY || process.env.RESEND_API_KEY;
+  process.env.SUPABASE_URL ||= env.SUPABASE_URL || env.VITE_SUPABASE_URL;
+  process.env.SUPABASE_SERVICE_ROLE_KEY ||= env.SUPABASE_SERVICE_ROLE_KEY;
+  process.env.JWT_SECRET ||= env.JWT_SECRET;
 
   return {
     base: '/',
@@ -51,7 +55,7 @@ export default defineConfig(({ mode }) => {
             if (req.url === '/api/auth/login' && req.method === 'POST') {
               const body = await readBody();
               if (!body.email || !body.password) return sendJson(400, { error: 'Email and password are required.' });
-              const result = login(body.email, body.password);
+              const result = await login(body.email, body.password);
               if (!result.ok) return sendJson(401, { error: result.error });
               return sendJson(200, { user: result.user }, sessionCookie(result.token));
             }
@@ -60,7 +64,7 @@ export default defineConfig(({ mode }) => {
               const body = await readBody();
               if (!body.name || !body.email || !body.password) return sendJson(400, { error: 'Name, email, and password are required.' });
               if (String(body.password).length < 8) return sendJson(400, { error: 'Password must be at least 8 characters.' });
-              const result = signup(body);
+              const result = await signup(body);
               if (!result.ok) return sendJson(409, { error: result.error });
               return sendJson(201, { user: result.user }, sessionCookie(result.token));
             }
@@ -76,7 +80,7 @@ export default defineConfig(({ mode }) => {
             if (req.url === '/api/customer/dashboard' && req.method === 'GET') {
               const user = currentUser();
               if (!user) return sendJson(401, { error: 'Authentication required.' });
-              const result = getCustomerDashboard(user);
+              const result = await getCustomerDashboard(user);
               if (!result.ok) return sendJson(result.status, { error: result.error });
               return sendJson(200, result.data);
             }
@@ -84,7 +88,7 @@ export default defineConfig(({ mode }) => {
             if (req.url === '/api/customer/usage-events' && req.method === 'GET') {
               const user = currentUser();
               if (!user) return sendJson(401, { error: 'Authentication required.' });
-              const result = getCustomerDashboard(user);
+              const result = await getCustomerDashboard(user);
               if (!result.ok) return sendJson(result.status, { error: result.error });
               return sendJson(200, { usageEvents: result.data.usageEvents });
             }
@@ -92,14 +96,14 @@ export default defineConfig(({ mode }) => {
             if (req.url === '/api/customer/billing-estimate' && req.method === 'GET') {
               const user = currentUser();
               if (!user?.customerId) return sendJson(403, { error: 'Customer access required.' });
-              return sendJson(200, { billingEstimate: billingEstimateFor(user.customerId) });
+              return sendJson(200, { billingEstimate: await billingEstimateForCustomer(user.customerId) });
             }
 
             if (req.url === '/api/customer/packie-protection' && req.method === 'PATCH') {
               const user = currentUser();
               if (!user) return sendJson(401, { error: 'Authentication required.' });
               const body = await readBody();
-              const result = setPackieProtection(user, Boolean(body.enabled));
+              const result = await setPackieProtection(user, Boolean(body.enabled));
               if (!result.ok) return sendJson(result.status, { error: result.error });
               return sendJson(200, result);
             }
@@ -109,7 +113,7 @@ export default defineConfig(({ mode }) => {
               if (!user) return sendJson(401, { error: 'Authentication required.' });
               const body = await readBody();
               if (!body.phoneNumber) return sendJson(400, { error: 'Phone number is required.' });
-              const result = blockNumber(user, body.phoneNumber);
+              const result = await blockNumber(user, body.phoneNumber);
               if (!result.ok) return sendJson(result.status, { error: result.error });
               return sendJson(201, result);
             }
@@ -118,7 +122,7 @@ export default defineConfig(({ mode }) => {
               const user = currentUser();
               if (!user) return sendJson(401, { error: 'Authentication required.' });
               const blockedNumberId = decodeURIComponent(req.url.split('/').pop() || '');
-              const result = unblockNumber(user, blockedNumberId);
+              const result = await unblockNumber(user, blockedNumberId);
               if (!result.ok) return sendJson(result.status, { error: result.error });
               return sendJson(200, { ok: true });
             }
@@ -128,6 +132,13 @@ export default defineConfig(({ mode }) => {
               if (!user) return sendJson(401, { error: 'Authentication required.' });
               if (user.role !== 'admin') return sendJson(403, { error: 'Admin access required.' });
               return sendJson(200, getSeedSummary());
+            }
+
+            if (req.url === '/api/waitlist' && req.method === 'POST') {
+              const body = await readBody();
+              const result = await joinWaitlist({ name: body.name, email: body.email });
+              if (!result.ok) return sendJson(result.status, { error: result.error });
+              return sendJson(201, result.entry);
             }
 
             // Secure server-side mail sending endpoint

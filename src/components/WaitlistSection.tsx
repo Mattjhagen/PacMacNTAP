@@ -8,67 +8,32 @@ export default function WaitlistSection() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isCompleted, setIsCompleted] = useState(false);
   const [waitlistNumber, setWaitlistNumber] = useState<number | null>(null);
+  const [submitError, setSubmitError] = useState('');
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!name.trim() || !email.trim()) return;
 
     setIsSubmitting(true);
-    
-    // Generate waitlist number to persist
-    const generatedWaitlistNum = Math.floor(Math.random() * 450) + 2180;
-    setWaitlistNumber(generatedWaitlistNum);
-
-    // Save registration locally
-    try {
-      const existingRaw = localStorage.getItem('pacmac_waitlist_signups');
-      let list = [];
-      if (existingRaw) {
-        try {
-          list = JSON.parse(existingRaw);
-        } catch (e) {
-          list = [];
-        }
-      }
-      
-      const newEntry = {
-        name: name.trim(),
-        email: email.trim(),
-        date: new Date().toISOString(),
-        waitlistNumber: generatedWaitlistNum,
-        status: "Active"
-      };
-      
-      localStorage.setItem('pacmac_waitlist_signups', JSON.stringify([newEntry, ...list]));
-    } catch (saveError) {
-      console.warn("Storage write failed (e.g., privacy/incognito filters):", saveError);
-    }
+    setSubmitError('');
 
     try {
-      // Send form data in the background to FormSubmit
-      const response = await fetch("https://formsubmit.co/ajax/mattjhagen0@gmail.com", {
+      const response = await fetch('/api/waitlist', {
         method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          "Accept": "application/json"
-        },
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          name: name,
-          email: email,
-          _subject: "✨ [PacMac Mobile] New Early Access Signup",
-          _replyto: email
+          name: name.trim(),
+          email: email.trim()
         })
       });
-
-      if (!response.ok) {
-        throw new Error("FormSubmit submission failed");
-      }
-    } catch (error) {
-      // Graceful fallback to guarantee user gets completed state regardless of adblockers/network blocks
-      console.warn("Could not send form directly to FormSubmit, falling back to instant local registration:", error);
+      const data = await response.json();
+      if (!response.ok) throw new Error(data.error || 'Unable to join waitlist.');
+      setWaitlistNumber(data.waitlistNumber);
+      setIsCompleted(true);
+    } catch (error: any) {
+      setSubmitError(error.message || 'Unable to join waitlist.');
     } finally {
       setIsSubmitting(false);
-      setIsCompleted(true);
     }
   };
 
@@ -158,6 +123,12 @@ export default function WaitlistSection() {
                     <ShieldAlert className="w-4 h-4 flex-shrink-0 text-brand-gray-600 mt-0.5" />
                     <span>SAFE AND COMPLIANT: We never share or sell your email address. You will only receive updates regarding PackieAI and PacMac Mobile.</span>
                   </div>
+
+                  {submitError && (
+                    <div className="text-xs text-red-200 border border-red-300/20 bg-red-300/10 rounded-lg px-3 py-2">
+                      {submitError}
+                    </div>
+                  )}
                 </motion.form>
               ) : (
                 <motion.div
