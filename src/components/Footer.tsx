@@ -28,6 +28,18 @@ export default function Footer() {
           </p>
         </div>
 
+        <div className="flex flex-col md:flex-row items-center justify-between gap-4 py-6 border-b border-white/5">
+          <Link
+            to="/lifeline"
+            className="text-xs font-mono uppercase tracking-wider text-brand-gray-300 hover:text-white transition-colors"
+          >
+            Lifeline / NTAP
+          </Link>
+          <p className="text-[11px] text-brand-gray-500 text-center md:text-right max-w-xl leading-relaxed">
+            PacMac Mobile is not a government agency. Eligibility is verified through the official National Verifier.
+          </p>
+        </div>
+
         {/* Copyright, legal, domain details */}
         <div className="flex flex-col sm:flex-row items-center justify-between gap-6 pt-8 text-[11px] font-mono text-brand-gray-500">
           <div className="flex flex-wrap justify-center sm:justify-start gap-4 sm:gap-6">

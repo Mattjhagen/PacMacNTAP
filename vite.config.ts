@@ -9,13 +9,22 @@ import {
   getCustomerDashboard,
   getSeedSummary,
   getSessionUser,
+  createLifelineLead,
+  formatWaitlistResponse,
   joinWaitlist,
+  listLifelineLeads,
+  listWaitlist,
   login,
   sessionCookie,
   setPackieProtection,
   signup,
   unblockNumber
 } from './server/pacmacBackend';
+import {
+  deviceLookupService,
+  formatByopApiResponse,
+  listByopChecks
+} from './server/deviceLookupService';
 
 export default defineConfig(({ mode }) => {
   // Load environment variables (from .env.local, .env, etc.)
@@ -134,11 +143,58 @@ export default defineConfig(({ mode }) => {
               return sendJson(200, getSeedSummary());
             }
 
+            if (req.url === '/api/admin/waitlist' && req.method === 'GET') {
+              const user = currentUser();
+              if (!user) return sendJson(401, { error: 'Authentication required.' });
+              if (user.role !== 'admin') return sendJson(403, { error: 'Admin access required.' });
+              const entries = await listWaitlist();
+              return sendJson(200, { success: true, total: entries.length, entries });
+            }
+
+            if (req.url === '/api/admin/byop-checks' && req.method === 'GET') {
+              const user = currentUser();
+              if (!user) return sendJson(401, { error: 'Authentication required.' });
+              if (user.role !== 'admin') return sendJson(403, { error: 'Admin access required.' });
+              const checks = await listByopChecks();
+              return sendJson(200, { success: true, total: checks.length, checks });
+            }
+
+            if (req.url === '/api/admin/lifeline-leads' && req.method === 'GET') {
+              const user = currentUser();
+              if (!user) return sendJson(401, { error: 'Authentication required.' });
+              if (user.role !== 'admin') return sendJson(403, { error: 'Admin access required.' });
+              const leads = await listLifelineLeads();
+              return sendJson(200, { success: true, total: leads.length, leads });
+            }
+
             if (req.url === '/api/waitlist' && req.method === 'POST') {
               const body = await readBody();
-              const result = await joinWaitlist({ name: body.name, email: body.email });
+              const result = await joinWaitlist({
+                fullName: body.full_name || body.fullName || body.name,
+                phone: body.phone,
+                email: body.email
+              });
               if (!result.ok) return sendJson(result.status, { error: result.error });
-              return sendJson(201, result.entry);
+              return sendJson(200, formatWaitlistResponse(result));
+            }
+
+            if (req.url === '/api/lifeline/leads' && req.method === 'POST') {
+              const body = await readBody();
+              const result = await createLifelineLead({
+                fullName: body.full_name || body.fullName || body.name,
+                email: body.email,
+                phone: body.phone,
+                eligibilityStatus: body.eligibility_status || body.eligibilityStatus,
+                consent: body.consent
+              });
+              if (!result.ok) return sendJson(result.status, { error: result.error });
+              return sendJson(201, { success: true, lead: result.lead });
+            }
+
+            if (req.url === '/api/byop/check-imei' && req.method === 'POST') {
+              const body = await readBody();
+              const result = await deviceLookupService.check_byop_compatibility(body.imei || '');
+              return sendJson(result.imei_valid ? 200 : 400, formatByopApiResponse(result));
             }
 
             // Secure server-side mail sending endpoint

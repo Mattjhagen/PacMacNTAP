@@ -1,8 +1,10 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import {
   Activity,
+  AlertCircle,
   Ban,
   CircleDollarSign,
+  FileText,
   Gauge,
   KeyRound,
   Plus,
@@ -11,6 +13,7 @@ import {
   ShieldAlert,
   ShieldCheck,
   Smartphone,
+  Search,
   Users,
   Wifi
 } from 'lucide-react';
@@ -21,11 +24,47 @@ import {
 } from '../services/wirelessOsService';
 import { CustomerProfile, WirelessOsState } from '../types/wireless';
 
-type AdminTab = 'overview' | 'customers' | 'sims' | 'usage' | 'billing' | 'fraud' | 'settings';
+type AdminTab = 'overview' | 'customers' | 'waitlist' | 'byop' | 'lifeline' | 'sims' | 'usage' | 'billing' | 'fraud' | 'settings';
+
+interface WaitlistEntry {
+  id: string;
+  email: string;
+  fullName?: string | null;
+  phone?: string | null;
+  status: string;
+  position: number;
+  createdAt: string;
+}
+
+interface ByopCheck {
+  id: string;
+  email?: string | null;
+  imei_last4?: string | null;
+  tac: string;
+  detected_brand?: string | null;
+  detected_model?: string | null;
+  compatibility_status: string;
+  manual_review_required: boolean;
+  created_at: string;
+}
+
+interface LifelineLead {
+  id: string;
+  fullName: string;
+  email: string;
+  phone: string;
+  eligibilityStatus: string;
+  consent: boolean;
+  source: string;
+  createdAt: string;
+}
 
 const tabs: Array<{ id: AdminTab; label: string; icon: React.ElementType }> = [
   { id: 'overview', label: 'Overview', icon: Gauge },
   { id: 'customers', label: 'Customers', icon: Users },
+  { id: 'waitlist', label: 'Early Access', icon: Users },
+  { id: 'byop', label: 'BYOP Checks', icon: Search },
+  { id: 'lifeline', label: 'Lifeline / NTAP', icon: FileText },
   { id: 'sims', label: 'SIM/eSIM', icon: Smartphone },
   { id: 'usage', label: 'Usage', icon: Activity },
   { id: 'billing', label: 'Billing', icon: CircleDollarSign },
@@ -39,9 +78,9 @@ function money(value: number) {
 
 function StatusPill({ value }: { value: string }) {
   const tone =
-    value === 'active' || value === 'enabled'
+    value === 'active' || value === 'enabled' || value === 'likely_compatible'
       ? 'bg-emerald-400/10 text-emerald-300 border-emerald-400/20'
-      : value === 'suspended' || value === 'high'
+      : value === 'suspended' || value === 'high' || value === 'not_supported'
         ? 'bg-red-400/10 text-red-300 border-red-400/20'
         : 'bg-sky-400/10 text-sky-200 border-sky-400/20';
 
@@ -88,6 +127,15 @@ export default function Admin() {
     phoneNumber: ''
   });
   const [notice, setNotice] = useState('');
+  const [waitlistEntries, setWaitlistEntries] = useState<WaitlistEntry[]>([]);
+  const [waitlistLoading, setWaitlistLoading] = useState(false);
+  const [waitlistError, setWaitlistError] = useState('');
+  const [byopChecks, setByopChecks] = useState<ByopCheck[]>([]);
+  const [byopLoading, setByopLoading] = useState(false);
+  const [byopError, setByopError] = useState('');
+  const [lifelineLeads, setLifelineLeads] = useState<LifelineLead[]>([]);
+  const [lifelineLoading, setLifelineLoading] = useState(false);
+  const [lifelineError, setLifelineError] = useState('');
 
   const refresh = () => {
     const next = wirelessOsService.getState();
@@ -102,6 +150,57 @@ export default function Admin() {
     window.addEventListener('pacmac-wireless-os-change', handler);
     return () => window.removeEventListener('pacmac-wireless-os-change', handler);
   });
+
+  const loadWaitlist = async () => {
+    setWaitlistLoading(true);
+    setWaitlistError('');
+    try {
+      const response = await fetch('/api/admin/waitlist', { credentials: 'include' });
+      const data = await response.json();
+      if (!response.ok) throw new Error(data.error || 'Unable to load waitlist.');
+      setWaitlistEntries(data.entries || []);
+    } catch (err: any) {
+      setWaitlistError(err.message || 'Unable to load waitlist.');
+    } finally {
+      setWaitlistLoading(false);
+    }
+  };
+
+  const loadByopChecks = async () => {
+    setByopLoading(true);
+    setByopError('');
+    try {
+      const response = await fetch('/api/admin/byop-checks', { credentials: 'include' });
+      const data = await response.json();
+      if (!response.ok) throw new Error(data.error || 'Unable to load BYOP checks.');
+      setByopChecks(data.checks || []);
+    } catch (err: any) {
+      setByopError(err.message || 'Unable to load BYOP checks.');
+    } finally {
+      setByopLoading(false);
+    }
+  };
+
+  const loadLifelineLeads = async () => {
+    setLifelineLoading(true);
+    setLifelineError('');
+    try {
+      const response = await fetch('/api/admin/lifeline-leads', { credentials: 'include' });
+      const data = await response.json();
+      if (!response.ok) throw new Error(data.error || 'Unable to load Lifeline leads.');
+      setLifelineLeads(data.leads || []);
+    } catch (err: any) {
+      setLifelineError(err.message || 'Unable to load Lifeline leads.');
+    } finally {
+      setLifelineLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    if (activeTab === 'waitlist') loadWaitlist();
+    if (activeTab === 'byop') loadByopChecks();
+    if (activeTab === 'lifeline') loadLifelineLeads();
+  }, [activeTab]);
 
   const selectedCustomer = useMemo(
     () => state.customers.find((customer) => customer.id === selectedCustomerId) || state.customers[0],
@@ -347,6 +446,236 @@ export default function Admin() {
                   ))}
                   <button className="w-full h-11 rounded bg-white text-[#041019] text-sm font-semibold hover:bg-cyan-100">Create</button>
                 </form>
+              </div>
+            )}
+
+            {activeTab === 'waitlist' && (
+              <div className="border border-white/8 bg-neutral-950/55 rounded-lg overflow-hidden">
+                <div className="p-5 border-b border-white/8 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                  <div>
+                    <h2 className="font-display text-xl font-semibold">Early Access Waitlist</h2>
+                    <p className="text-sm text-brand-gray-400">
+                      Live Supabase signups ordered by created date. Positions are calculated from database order.
+                    </p>
+                  </div>
+                  <button
+                    onClick={loadWaitlist}
+                    className="h-10 px-4 rounded border border-white/10 bg-white/5 hover:bg-white/10 text-xs font-mono flex items-center gap-2"
+                  >
+                    <RefreshCw className={`w-4 h-4 ${waitlistLoading ? 'animate-spin' : ''}`} />
+                    Refresh
+                  </button>
+                </div>
+
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 p-5 border-b border-white/8">
+                  <MetricCard label="Total Signups" value={waitlistEntries.length} detail="early access requests" icon={Users} />
+                  <MetricCard
+                    label="Next Position"
+                    value={`#${waitlistEntries.length + 1}`}
+                    detail="based on created_at order"
+                    icon={Gauge}
+                  />
+                  <MetricCard
+                    label="Latest"
+                    value={waitlistEntries[0] ? `#${waitlistEntries[waitlistEntries.length - 1]?.position}` : '-'}
+                    detail={waitlistEntries[waitlistEntries.length - 1]?.email || 'no signups yet'}
+                    icon={ShieldCheck}
+                  />
+                </div>
+
+                {waitlistError && (
+                  <div className="m-5 rounded border border-red-300/20 bg-red-300/10 px-4 py-3 text-sm text-red-100">
+                    {waitlistError}
+                  </div>
+                )}
+
+                <div className="overflow-x-auto">
+                  <table className="w-full text-left text-xs">
+                    <thead className="text-brand-gray-500 font-mono uppercase tracking-wider border-b border-white/8">
+                      <tr>
+                        <th className="p-4 font-normal">Position</th>
+                        <th className="p-4 font-normal">Email</th>
+                        <th className="p-4 font-normal">Full Name</th>
+                        <th className="p-4 font-normal">Phone</th>
+                        <th className="p-4 font-normal">Status</th>
+                        <th className="p-4 font-normal">Created</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-white/8">
+                      {waitlistEntries.map((entry) => (
+                        <tr key={entry.id} className="hover:bg-white/5">
+                          <td className="p-4 font-mono text-white">#{entry.position}</td>
+                          <td className="p-4 font-mono text-brand-gray-300">{entry.email}</td>
+                          <td className="p-4">{entry.fullName || '-'}</td>
+                          <td className="p-4 font-mono text-brand-gray-400">{entry.phone || '-'}</td>
+                          <td className="p-4"><StatusPill value={entry.status} /></td>
+                          <td className="p-4 font-mono text-brand-gray-500">{new Date(entry.createdAt).toLocaleString()}</td>
+                        </tr>
+                      ))}
+                      {!waitlistLoading && waitlistEntries.length === 0 && (
+                        <tr>
+                          <td colSpan={6} className="p-10 text-center text-brand-gray-500">
+                            No early access signups found.
+                          </td>
+                        </tr>
+                      )}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            )}
+
+            {activeTab === 'byop' && (
+              <div className="border border-white/8 bg-neutral-950/55 rounded-lg overflow-hidden">
+                <div className="p-5 border-b border-white/8 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                  <div>
+                    <h2 className="font-display text-xl font-semibold">BYOP Checks</h2>
+                    <p className="text-sm text-brand-gray-400">
+                      Server-side IMEI lookups. PacMac stores the TAC and IMEI last four only.
+                    </p>
+                  </div>
+                  <button
+                    onClick={loadByopChecks}
+                    className="h-10 px-4 rounded border border-white/10 bg-white/5 hover:bg-white/10 text-xs font-mono flex items-center gap-2"
+                  >
+                    <RefreshCw className={`w-4 h-4 ${byopLoading ? 'animate-spin' : ''}`} />
+                    Refresh
+                  </button>
+                </div>
+
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 p-5 border-b border-white/8">
+                  <MetricCard label="Total Checks" value={byopChecks.length} detail="IMEI submissions" icon={Search} />
+                  <MetricCard
+                    label="Manual Review"
+                    value={byopChecks.filter((check) => check.manual_review_required).length}
+                    detail="unknown TAC lookups"
+                    icon={AlertCircle}
+                  />
+                  <MetricCard
+                    label="Identified"
+                    value={byopChecks.filter((check) => check.compatibility_status === 'likely_compatible').length}
+                    detail="matched TAC records"
+                    icon={ShieldCheck}
+                  />
+                </div>
+
+                {byopError && (
+                  <div className="m-5 rounded border border-red-300/20 bg-red-300/10 px-4 py-3 text-sm text-red-100">
+                    {byopError}
+                  </div>
+                )}
+
+                <div className="overflow-x-auto">
+                  <table className="w-full text-left text-xs">
+                    <thead className="text-brand-gray-500 font-mono uppercase tracking-wider border-b border-white/8">
+                      <tr>
+                        <th className="p-4 font-normal">Created</th>
+                        <th className="p-4 font-normal">TAC</th>
+                        <th className="p-4 font-normal">IMEI Last 4</th>
+                        <th className="p-4 font-normal">Device</th>
+                        <th className="p-4 font-normal">Status</th>
+                        <th className="p-4 font-normal">Email</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-white/8">
+                      {byopChecks.map((check) => (
+                        <tr key={check.id} className="hover:bg-white/5">
+                          <td className="p-4 font-mono text-brand-gray-500">{new Date(check.created_at).toLocaleString()}</td>
+                          <td className="p-4 font-mono text-white">{check.tac}</td>
+                          <td className="p-4 font-mono text-brand-gray-300">{check.imei_last4 ? `...${check.imei_last4}` : '-'}</td>
+                          <td className="p-4">
+                            {check.detected_brand && check.detected_model ? `${check.detected_brand} ${check.detected_model}` : 'Manual review'}
+                          </td>
+                          <td className="p-4"><StatusPill value={check.compatibility_status} /></td>
+                          <td className="p-4 font-mono text-brand-gray-400">{check.email || '-'}</td>
+                        </tr>
+                      ))}
+                      {!byopLoading && byopChecks.length === 0 && (
+                        <tr>
+                          <td colSpan={6} className="p-10 text-center text-brand-gray-500">
+                            No BYOP checks found.
+                          </td>
+                        </tr>
+                      )}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            )}
+
+            {activeTab === 'lifeline' && (
+              <div className="border border-white/8 bg-neutral-950/55 rounded-lg overflow-hidden">
+                <div className="p-5 border-b border-white/8 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                  <div>
+                    <h2 className="font-display text-xl font-semibold">Lifeline / NTAP Leads</h2>
+                    <p className="text-sm text-brand-gray-400">
+                      Safe contact requests from the Nebraska Lifeline helper. No SSNs, documents, or eligibility proof are collected.
+                    </p>
+                  </div>
+                  <button
+                    onClick={loadLifelineLeads}
+                    className="h-10 px-4 rounded border border-white/10 bg-white/5 hover:bg-white/10 text-xs font-mono flex items-center gap-2"
+                  >
+                    <RefreshCw className={`w-4 h-4 ${lifelineLoading ? 'animate-spin' : ''}`} />
+                    Refresh
+                  </button>
+                </div>
+
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 p-5 border-b border-white/8">
+                  <MetricCard label="Total Leads" value={lifelineLeads.length} detail="contact requests" icon={FileText} />
+                  <MetricCard
+                    label="Approved"
+                    value={lifelineLeads.filter((lead) => lead.eligibilityStatus === 'I was approved').length}
+                    detail="self-reported status"
+                    icon={ShieldCheck}
+                  />
+                  <MetricCard
+                    label="Need Help"
+                    value={lifelineLeads.filter((lead) => lead.eligibilityStatus === 'I need help finishing').length}
+                    detail="follow-up priority"
+                    icon={AlertCircle}
+                  />
+                </div>
+
+                {lifelineError && (
+                  <div className="m-5 rounded border border-red-300/20 bg-red-300/10 px-4 py-3 text-sm text-red-100">
+                    {lifelineError}
+                  </div>
+                )}
+
+                <div className="overflow-x-auto">
+                  <table className="w-full text-left text-xs">
+                    <thead className="text-brand-gray-500 font-mono uppercase tracking-wider border-b border-white/8">
+                      <tr>
+                        <th className="p-4 font-normal">Created</th>
+                        <th className="p-4 font-normal">Name</th>
+                        <th className="p-4 font-normal">Email</th>
+                        <th className="p-4 font-normal">Phone</th>
+                        <th className="p-4 font-normal">Eligibility Status</th>
+                        <th className="p-4 font-normal">Consent</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-white/8">
+                      {lifelineLeads.map((lead) => (
+                        <tr key={lead.id} className="hover:bg-white/5">
+                          <td className="p-4 font-mono text-brand-gray-500">{new Date(lead.createdAt).toLocaleString()}</td>
+                          <td className="p-4 text-white">{lead.fullName}</td>
+                          <td className="p-4 font-mono text-brand-gray-300">{lead.email}</td>
+                          <td className="p-4 font-mono text-brand-gray-400">{lead.phone}</td>
+                          <td className="p-4"><StatusPill value={lead.eligibilityStatus} /></td>
+                          <td className="p-4">{lead.consent ? <StatusPill value="enabled" /> : <StatusPill value="disabled" />}</td>
+                        </tr>
+                      ))}
+                      {!lifelineLoading && lifelineLeads.length === 0 && (
+                        <tr>
+                          <td colSpan={6} className="p-10 text-center text-brand-gray-500">
+                            No Lifeline / NTAP leads found.
+                          </td>
+                        </tr>
+                      )}
+                    </tbody>
+                  </table>
+                </div>
               </div>
             )}
 

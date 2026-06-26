@@ -3,6 +3,7 @@
 
 -- Enable UUID extension if not enabled
 CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
+CREATE EXTENSION IF NOT EXISTS "pgcrypto";
 
 -- 1. Profiles (User Account Metadata tied to Supabase Auth Users)
 CREATE TABLE IF NOT EXISTS public.profiles (
@@ -94,34 +95,82 @@ CREATE POLICY "Allow users to create tickets" ON public.support_tickets
 
 -- 6. Waitlist Registrations (Early access tracking)
 CREATE TABLE IF NOT EXISTS public.waitlist (
-  id UUID DEFAULT uuid_generate_v4() PRIMARY KEY,
-  name TEXT NOT NULL,
+  id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
   email TEXT UNIQUE NOT NULL,
-  waitlist_number INT NOT NULL,
-  status TEXT DEFAULT 'active' NOT NULL,
-  created_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now()) NOT NULL
+  full_name TEXT,
+  phone TEXT,
+  source TEXT DEFAULT 'pacmacmobile.com',
+  status TEXT DEFAULT 'pending',
+  position INTEGER,
+  referral_code TEXT UNIQUE,
+  referred_by UUID,
+  created_at TIMESTAMP WITH TIME ZONE DEFAULT now(),
+  updated_at TIMESTAMP WITH TIME ZONE DEFAULT now()
 );
+
+DO $$
+BEGIN
+  IF EXISTS (
+    SELECT 1 FROM information_schema.columns
+    WHERE table_schema = 'public' AND table_name = 'waitlist' AND column_name = 'name'
+  ) AND NOT EXISTS (
+    SELECT 1 FROM information_schema.columns
+    WHERE table_schema = 'public' AND table_name = 'waitlist' AND column_name = 'full_name'
+  ) THEN
+    ALTER TABLE public.waitlist RENAME COLUMN name TO full_name;
+  END IF;
+
+  IF EXISTS (
+    SELECT 1 FROM information_schema.columns
+    WHERE table_schema = 'public' AND table_name = 'waitlist' AND column_name = 'waitlist_number'
+  ) AND NOT EXISTS (
+    SELECT 1 FROM information_schema.columns
+    WHERE table_schema = 'public' AND table_name = 'waitlist' AND column_name = 'position'
+  ) THEN
+    ALTER TABLE public.waitlist RENAME COLUMN waitlist_number TO position;
+  END IF;
+END $$;
+
+ALTER TABLE public.waitlist ADD COLUMN IF NOT EXISTS full_name TEXT;
+ALTER TABLE public.waitlist ADD COLUMN IF NOT EXISTS phone TEXT;
+ALTER TABLE public.waitlist ADD COLUMN IF NOT EXISTS source TEXT DEFAULT 'pacmacmobile.com';
+ALTER TABLE public.waitlist ADD COLUMN IF NOT EXISTS status TEXT DEFAULT 'pending';
+ALTER TABLE public.waitlist ADD COLUMN IF NOT EXISTS position INTEGER;
+ALTER TABLE public.waitlist ADD COLUMN IF NOT EXISTS referral_code TEXT UNIQUE;
+ALTER TABLE public.waitlist ADD COLUMN IF NOT EXISTS referred_by UUID;
+ALTER TABLE public.waitlist ADD COLUMN IF NOT EXISTS updated_at TIMESTAMP WITH TIME ZONE DEFAULT now();
+
+ALTER TABLE public.waitlist ALTER COLUMN source SET DEFAULT 'pacmacmobile.com';
+ALTER TABLE public.waitlist ALTER COLUMN status SET DEFAULT 'pending';
+ALTER TABLE public.waitlist ALTER COLUMN email SET NOT NULL;
 
 -- RLS Policies for Waitlist
 ALTER TABLE public.waitlist ENABLE ROW LEVEL SECURITY;
-CREATE POLICY "Allow anonymous waitlist signups" ON public.waitlist
-  FOR INSERT WITH CHECK (TRUE);
-CREATE POLICY "Allow select views on admin queries" ON public.waitlist
-  FOR SELECT USING (TRUE); -- Managed via admin role restrictions in real scenarios
+DROP POLICY IF EXISTS "Allow anonymous waitlist signups" ON public.waitlist;
+DROP POLICY IF EXISTS "Allow select views on admin queries" ON public.waitlist;
 
 -- 7. Devices (Checked/Registered user handsets)
 CREATE TABLE IF NOT EXISTS public.devices (
   id UUID DEFAULT uuid_generate_v4() PRIMARY KEY,
   profile_id UUID REFERENCES public.profiles(id) ON DELETE CASCADE, -- Nullable until checkout/login
-  imei TEXT NOT NULL,
+  imei TEXT,
+  tac TEXT,
+  imei_last4 TEXT,
   brand TEXT,
   model TEXT,
-  compatibility_status TEXT CHECK (compatibility_status IN ('compatible', 'unsupported', 'locked')),
+  compatibility_status TEXT CHECK (compatibility_status IN ('compatible', 'unsupported', 'locked', 'likely_compatible', 'needs_manual_review', 'not_supported')),
   sim_type TEXT DEFAULT 'eSIM' CHECK (sim_type IN ('eSIM', 'Physical SIM')),
   is_esim_capable BOOLEAN DEFAULT TRUE,
   activation_readiness TEXT, -- e.g., 'Ready', 'Requires Unlock', 'Not Eligible'
   created_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now()) NOT NULL
 );
+
+ALTER TABLE public.devices ADD COLUMN IF NOT EXISTS tac TEXT;
+ALTER TABLE public.devices ADD COLUMN IF NOT EXISTS imei_last4 TEXT;
+ALTER TABLE public.devices ALTER COLUMN imei DROP NOT NULL;
+ALTER TABLE public.devices DROP CONSTRAINT IF EXISTS devices_compatibility_status_check;
+ALTER TABLE public.devices ADD CONSTRAINT devices_compatibility_status_check
+  CHECK (compatibility_status IN ('compatible', 'unsupported', 'locked', 'likely_compatible', 'needs_manual_review', 'not_supported'));
 
 -- RLS Policies for Devices
 ALTER TABLE public.devices ENABLE ROW LEVEL SECURITY;
@@ -131,6 +180,71 @@ CREATE POLICY "Allow users to view their own devices" ON public.devices
   FOR SELECT USING (auth.uid() = profile_id OR profile_id IS NULL);
 CREATE POLICY "Allow users to update their own devices" ON public.devices
   FOR UPDATE USING (auth.uid() = profile_id);
+
+-- 7a. BYOP TAC lookup data and privacy-safe lookup audit.
+CREATE TABLE IF NOT EXISTS public.device_tac_database (
+  id UUID DEFAULT uuid_generate_v4() PRIMARY KEY,
+  tac TEXT UNIQUE NOT NULL,
+  brand TEXT NOT NULL,
+  model TEXT NOT NULL,
+  device_type TEXT DEFAULT 'smartphone' NOT NULL,
+  esim_capable BOOLEAN,
+  five_g_capable BOOLEAN,
+  source TEXT DEFAULT 'local_seed' NOT NULL,
+  created_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now()) NOT NULL,
+  updated_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now()) NOT NULL
+);
+
+CREATE TABLE IF NOT EXISTS public.byop_checks (
+  id UUID DEFAULT uuid_generate_v4() PRIMARY KEY,
+  email TEXT,
+  imei_last4 TEXT,
+  tac TEXT NOT NULL,
+  detected_brand TEXT,
+  detected_model TEXT,
+  compatibility_status TEXT NOT NULL CHECK (compatibility_status IN ('likely_compatible', 'needs_manual_review', 'not_supported')),
+  manual_review_required BOOLEAN DEFAULT FALSE NOT NULL,
+  created_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now()) NOT NULL
+);
+
+ALTER TABLE public.device_tac_database ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.byop_checks ENABLE ROW LEVEL SECURITY;
+DROP POLICY IF EXISTS "Block public TAC reads" ON public.device_tac_database;
+DROP POLICY IF EXISTS "Block public BYOP check reads" ON public.byop_checks;
+
+-- 7b. Lifeline / NTAP helper lead capture. Do not store SSNs, documents,
+-- benefit cards, uploads, or sensitive eligibility proof in this table.
+CREATE TABLE IF NOT EXISTS public.lifeline_leads (
+  id UUID DEFAULT uuid_generate_v4() PRIMARY KEY,
+  full_name TEXT,
+  email TEXT,
+  phone TEXT,
+  eligibility_status TEXT,
+  consent BOOLEAN DEFAULT FALSE NOT NULL,
+  source TEXT DEFAULT 'lifeline_page' NOT NULL,
+  created_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now()) NOT NULL
+);
+
+ALTER TABLE public.lifeline_leads ENABLE ROW LEVEL SECURITY;
+
+INSERT INTO public.device_tac_database (tac, brand, model, device_type, esim_capable, five_g_capable, source)
+VALUES
+  ('35304110', 'Apple', 'iPhone 14', 'smartphone', TRUE, TRUE, 'local_seed'),
+  ('35693835', 'Apple', 'iPhone 13', 'smartphone', TRUE, TRUE, 'local_seed'),
+  ('35925406', 'Samsung', 'Galaxy S23', 'smartphone', TRUE, TRUE, 'local_seed'),
+  ('35672511', 'Samsung', 'Galaxy S22', 'smartphone', TRUE, TRUE, 'local_seed'),
+  ('35824005', 'Google', 'Pixel 7', 'smartphone', TRUE, TRUE, 'local_seed'),
+  ('35850012', 'Google', 'Pixel 8', 'smartphone', TRUE, TRUE, 'local_seed'),
+  ('35682811', 'Motorola', 'Moto G Power 5G', 'smartphone', FALSE, TRUE, 'local_seed'),
+  ('35766010', 'OnePlus', 'OnePlus 11', 'smartphone', TRUE, TRUE, 'local_seed')
+ON CONFLICT (tac) DO UPDATE SET
+  brand = EXCLUDED.brand,
+  model = EXCLUDED.model,
+  device_type = EXCLUDED.device_type,
+  esim_capable = EXCLUDED.esim_capable,
+  five_g_capable = EXCLUDED.five_g_capable,
+  source = EXCLUDED.source,
+  updated_at = timezone('utc'::text, now());
 
 -- PacMac backend-auth users.
 -- These are used by the Node/Express JWT session layer, not Supabase Auth.

@@ -69,6 +69,31 @@ export interface BlockedNumberRecord {
   createdAt: string;
 }
 
+export interface WaitlistRecord {
+  id: string;
+  email: string;
+  fullName?: string | null;
+  phone?: string | null;
+  source: string;
+  status: string;
+  position: number;
+  referralCode?: string | null;
+  referredBy?: string | null;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface LifelineLeadRecord {
+  id: string;
+  fullName: string;
+  email: string;
+  phone: string;
+  eligibilityStatus: string;
+  consent: boolean;
+  source: string;
+  createdAt: string;
+}
+
 const SESSION_COOKIE = 'pacmac_session';
 const JWT_SECRET = process.env.JWT_SECRET || 'pacmac-local-development-secret-change-me';
 const PRICE_PER_GB = Number(process.env.PRICE_PER_GB || process.env.VITE_PRICE_PER_GB || 3);
@@ -329,6 +354,54 @@ const blockedNumbers: BlockedNumberRecord[] = [
   }
 ];
 
+const memoryWaitlist: WaitlistRecord[] = [];
+const memoryLifelineLeads: LifelineLeadRecord[] = [];
+
+function isValidEmail(email: string) {
+  return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
+}
+
+function waitlistFromRow(row: any, position: number): WaitlistRecord {
+  return {
+    id: row.id,
+    email: row.email,
+    fullName: row.full_name || row.name || null,
+    phone: row.phone || null,
+    source: row.source || 'pacmacmobile.com',
+    status: row.status || 'pending',
+    position,
+    referralCode: row.referral_code || null,
+    referredBy: row.referred_by || null,
+    createdAt: row.created_at,
+    updatedAt: row.updated_at || row.created_at
+  };
+}
+
+function lifelineLeadFromRow(row: any): LifelineLeadRecord {
+  return {
+    id: row.id,
+    fullName: row.full_name || '',
+    email: row.email || '',
+    phone: row.phone || '',
+    eligibilityStatus: row.eligibility_status || '',
+    consent: Boolean(row.consent),
+    source: row.source || 'lifeline_page',
+    createdAt: row.created_at
+  };
+}
+
+async function orderedSupabaseWaitlist() {
+  const supabase = getSupabaseAdmin();
+  if (!supabase) return null;
+  const { data, error } = await supabase
+    .from('waitlist')
+    .select('*')
+    .order('created_at', { ascending: true })
+    .order('id', { ascending: true });
+  if (error) throw error;
+  return (data || []).map((row, index) => waitlistFromRow(row, index + 1));
+}
+
 function usageFor(customerId: string) {
   return usageEvents.filter((event) => event.customerId === customerId);
 }
@@ -363,67 +436,160 @@ export async function billingEstimateForCustomer(customerId: string) {
   return billingEstimateFor(customerId);
 }
 
-export async function joinWaitlist(input: { name?: string; email: string }) {
+export async function joinWaitlist(input: { name?: string; fullName?: string; phone?: string; email: string }) {
   const email = input.email.toLowerCase().trim();
-  const name = input.name?.trim() || email.split('@')[0];
+  const fullName = (input.fullName || input.name || '').trim() || null;
+  const phone = input.phone?.trim() || null;
   if (!email) return { ok: false as const, status: 400, error: 'Email is required.' };
+  if (!isValidEmail(email)) return { ok: false as const, status: 400, error: 'Please enter a valid email address.' };
 
   const supabase = getSupabaseAdmin();
   if (supabase) {
-    const { data: existing, error: lookupError } = await supabase
-      .from('waitlist')
-      .select('*')
-      .eq('email', email)
-      .maybeSingle();
-    if (lookupError) {
-      console.warn('[PacMac Supabase] Waitlist lookup failed, using memory fallback:', lookupError.message);
-    } else if (existing) {
+    const existingList = await orderedSupabaseWaitlist();
+    if (!existingList) return { ok: false as const, status: 500, error: 'Supabase waitlist is not available.' };
+    const existing = existingList.find((entry) => entry.email === email);
+    if (existing) {
       return {
         ok: true as const,
-        entry: {
-          id: existing.id,
-          name: existing.name,
-          email: existing.email,
-          waitlistNumber: existing.waitlist_number,
-          status: existing.status,
-          createdAt: existing.created_at
-        }
-      };
-    } else {
-      const { count } = await supabase.from('waitlist').select('id', { count: 'exact', head: true });
-      const waitlistNumber = 2500 + (count || 0) + 1;
-      const { data, error } = await supabase
-        .from('waitlist')
-        .insert({ name, email, waitlist_number: waitlistNumber, status: 'active' })
-        .select('*')
-        .single();
-      if (error) return { ok: false as const, status: 500, error: error.message };
-      return {
-        ok: true as const,
-        entry: {
-          id: data.id,
-          name: data.name,
-          email: data.email,
-          waitlistNumber: data.waitlist_number,
-          status: data.status,
-          createdAt: data.created_at
-        }
+        duplicate: true,
+        entry: existing
       };
     }
+
+    const { error } = await supabase
+      .from('waitlist')
+      .insert({ email, full_name: fullName, phone, source: 'pacmacmobile.com', status: 'pending' });
+    if (error) {
+      if (error.code === '23505') {
+        const refreshed = await orderedSupabaseWaitlist();
+        const duplicate = refreshed?.find((entry) => entry.email === email);
+        if (duplicate) return { ok: true as const, duplicate: true, entry: duplicate };
+      }
+      return { ok: false as const, status: 500, error: error.message };
+    }
+
+    const updated = await orderedSupabaseWaitlist();
+    const entry = updated?.find((item) => item.email === email);
+    if (!entry) return { ok: false as const, status: 500, error: 'Waitlist record could not be read after insert.' };
+    await supabase.from('waitlist').update({ position: entry.position }).eq('id', entry.id);
+    return { ok: true as const, duplicate: false, entry };
   }
 
-  const waitlistNumber = Math.floor(Math.random() * 450) + 2480;
-  return {
-    ok: true as const,
-    entry: {
-      id: `wait_${crypto.randomUUID()}`,
-      name,
-      email,
-      waitlistNumber,
-      status: 'active',
-      createdAt: new Date().toISOString()
-    }
+  const existing = memoryWaitlist.find((entry) => entry.email === email);
+  if (existing) return { ok: true as const, duplicate: true, entry: existing };
+
+  const createdAt = new Date().toISOString();
+  const entry: WaitlistRecord = {
+    id: `wait_${crypto.randomUUID()}`,
+    email,
+    fullName,
+    phone,
+    source: 'pacmacmobile.com',
+    status: 'pending',
+    position: memoryWaitlist.length + 1,
+    referralCode: null,
+    referredBy: null,
+    createdAt,
+    updatedAt: createdAt
   };
+  memoryWaitlist.push(entry);
+  return { ok: true as const, duplicate: false, entry };
+}
+
+export async function listWaitlist() {
+  const supabase = getSupabaseAdmin();
+  if (supabase) {
+    const entries = await orderedSupabaseWaitlist();
+    if (!entries) return [];
+    await Promise.all(entries.map((entry) => supabase.from('waitlist').update({ position: entry.position }).eq('id', entry.id)));
+    return entries;
+  }
+  return memoryWaitlist.map((entry, index) => ({ ...entry, position: index + 1 }));
+}
+
+export function formatWaitlistResponse(result: { ok: true; duplicate: boolean; entry: WaitlistRecord }) {
+  return {
+    success: true,
+    message: result.duplicate
+      ? "You’re already on the PacMac Mobile early access list."
+      : "You’re on the PacMac Mobile early access list.",
+    position: result.entry.position,
+    email: result.entry.email,
+    status: result.entry.status
+  };
+}
+
+export function resetMemoryWaitlistForTests() {
+  memoryWaitlist.splice(0, memoryWaitlist.length);
+}
+
+export async function createLifelineLead(input: {
+  fullName?: string;
+  email?: string;
+  phone?: string;
+  eligibilityStatus?: string;
+  consent?: boolean;
+}) {
+  const fullName = (input.fullName || '').trim();
+  const email = (input.email || '').toLowerCase().trim();
+  const phone = (input.phone || '').trim();
+  const eligibilityStatus = (input.eligibilityStatus || '').trim();
+  const consent = Boolean(input.consent);
+
+  if (!fullName) return { ok: false as const, status: 400, error: 'Name is required.' };
+  if (!email || !isValidEmail(email)) return { ok: false as const, status: 400, error: 'Please enter a valid email address.' };
+  if (!phone) return { ok: false as const, status: 400, error: 'Phone is required.' };
+  if (!eligibilityStatus) return { ok: false as const, status: 400, error: 'Eligibility status is required.' };
+  if (!consent) return { ok: false as const, status: 400, error: 'Consent is required before PacMac Mobile can contact you.' };
+
+  const supabase = getSupabaseAdmin();
+  if (supabase) {
+    const { data, error } = await supabase
+      .from('lifeline_leads')
+      .insert({
+        full_name: fullName,
+        email,
+        phone,
+        eligibility_status: eligibilityStatus,
+        consent,
+        source: 'lifeline_page'
+      })
+      .select('id,full_name,email,phone,eligibility_status,consent,source,created_at')
+      .single();
+    if (error) return { ok: false as const, status: 500, error: error.message };
+    return { ok: true as const, lead: lifelineLeadFromRow(data) };
+  }
+
+  const createdAt = new Date().toISOString();
+  const lead: LifelineLeadRecord = {
+    id: `lifeline_${crypto.randomUUID()}`,
+    fullName,
+    email,
+    phone,
+    eligibilityStatus,
+    consent,
+    source: 'lifeline_page',
+    createdAt
+  };
+  memoryLifelineLeads.unshift(lead);
+  return { ok: true as const, lead };
+}
+
+export async function listLifelineLeads() {
+  const supabase = getSupabaseAdmin();
+  if (supabase) {
+    const { data, error } = await supabase
+      .from('lifeline_leads')
+      .select('id,full_name,email,phone,eligibility_status,consent,source,created_at')
+      .order('created_at', { ascending: false });
+    if (error) throw error;
+    return (data || []).map(lifelineLeadFromRow);
+  }
+  return [...memoryLifelineLeads];
+}
+
+export function resetMemoryLifelineLeadsForTests() {
+  memoryLifelineLeads.splice(0, memoryLifelineLeads.length);
 }
 
 export async function login(email: string, password: string) {

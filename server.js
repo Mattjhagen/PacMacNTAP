@@ -22147,6 +22147,45 @@ var blockedNumbers = [
     createdAt: new Date(Date.now() - 864e5 * 6).toISOString()
   }
 ];
+var memoryWaitlist = [];
+var memoryLifelineLeads = [];
+function isValidEmail(email) {
+  return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
+}
+function waitlistFromRow(row, position) {
+  return {
+    id: row.id,
+    email: row.email,
+    fullName: row.full_name || row.name || null,
+    phone: row.phone || null,
+    source: row.source || "pacmacmobile.com",
+    status: row.status || "pending",
+    position,
+    referralCode: row.referral_code || null,
+    referredBy: row.referred_by || null,
+    createdAt: row.created_at,
+    updatedAt: row.updated_at || row.created_at
+  };
+}
+function lifelineLeadFromRow(row) {
+  return {
+    id: row.id,
+    fullName: row.full_name || "",
+    email: row.email || "",
+    phone: row.phone || "",
+    eligibilityStatus: row.eligibility_status || "",
+    consent: Boolean(row.consent),
+    source: row.source || "lifeline_page",
+    createdAt: row.created_at
+  };
+}
+async function orderedSupabaseWaitlist() {
+  const supabase = getSupabaseAdmin();
+  if (!supabase) return null;
+  const { data, error } = await supabase.from("waitlist").select("*").order("created_at", { ascending: true }).order("id", { ascending: true });
+  if (error) throw error;
+  return (data || []).map((row, index) => waitlistFromRow(row, index + 1));
+}
 function usageFor(customerId) {
   return usageEvents.filter((event) => event.customerId === customerId);
 }
@@ -22180,55 +22219,121 @@ async function billingEstimateForCustomer(customerId) {
 }
 async function joinWaitlist(input) {
   const email = input.email.toLowerCase().trim();
-  const name = input.name?.trim() || email.split("@")[0];
+  const fullName = (input.fullName || input.name || "").trim() || null;
+  const phone = input.phone?.trim() || null;
   if (!email) return { ok: false, status: 400, error: "Email is required." };
+  if (!isValidEmail(email)) return { ok: false, status: 400, error: "Please enter a valid email address." };
   const supabase = getSupabaseAdmin();
   if (supabase) {
-    const { data: existing, error: lookupError } = await supabase.from("waitlist").select("*").eq("email", email).maybeSingle();
-    if (lookupError) {
-      console.warn("[PacMac Supabase] Waitlist lookup failed, using memory fallback:", lookupError.message);
-    } else if (existing) {
+    const existingList = await orderedSupabaseWaitlist();
+    if (!existingList) return { ok: false, status: 500, error: "Supabase waitlist is not available." };
+    const existing2 = existingList.find((entry3) => entry3.email === email);
+    if (existing2) {
       return {
         ok: true,
-        entry: {
-          id: existing.id,
-          name: existing.name,
-          email: existing.email,
-          waitlistNumber: existing.waitlist_number,
-          status: existing.status,
-          createdAt: existing.created_at
-        }
-      };
-    } else {
-      const { count } = await supabase.from("waitlist").select("id", { count: "exact", head: true });
-      const waitlistNumber2 = 2500 + (count || 0) + 1;
-      const { data, error } = await supabase.from("waitlist").insert({ name, email, waitlist_number: waitlistNumber2, status: "active" }).select("*").single();
-      if (error) return { ok: false, status: 500, error: error.message };
-      return {
-        ok: true,
-        entry: {
-          id: data.id,
-          name: data.name,
-          email: data.email,
-          waitlistNumber: data.waitlist_number,
-          status: data.status,
-          createdAt: data.created_at
-        }
+        duplicate: true,
+        entry: existing2
       };
     }
+    const { error } = await supabase.from("waitlist").insert({ email, full_name: fullName, phone, source: "pacmacmobile.com", status: "pending" });
+    if (error) {
+      if (error.code === "23505") {
+        const refreshed = await orderedSupabaseWaitlist();
+        const duplicate = refreshed?.find((entry3) => entry3.email === email);
+        if (duplicate) return { ok: true, duplicate: true, entry: duplicate };
+      }
+      return { ok: false, status: 500, error: error.message };
+    }
+    const updated = await orderedSupabaseWaitlist();
+    const entry2 = updated?.find((item) => item.email === email);
+    if (!entry2) return { ok: false, status: 500, error: "Waitlist record could not be read after insert." };
+    await supabase.from("waitlist").update({ position: entry2.position }).eq("id", entry2.id);
+    return { ok: true, duplicate: false, entry: entry2 };
   }
-  const waitlistNumber = Math.floor(Math.random() * 450) + 2480;
-  return {
-    ok: true,
-    entry: {
-      id: `wait_${crypto2.randomUUID()}`,
-      name,
-      email,
-      waitlistNumber,
-      status: "active",
-      createdAt: (/* @__PURE__ */ new Date()).toISOString()
-    }
+  const existing = memoryWaitlist.find((entry2) => entry2.email === email);
+  if (existing) return { ok: true, duplicate: true, entry: existing };
+  const createdAt = (/* @__PURE__ */ new Date()).toISOString();
+  const entry = {
+    id: `wait_${crypto2.randomUUID()}`,
+    email,
+    fullName,
+    phone,
+    source: "pacmacmobile.com",
+    status: "pending",
+    position: memoryWaitlist.length + 1,
+    referralCode: null,
+    referredBy: null,
+    createdAt,
+    updatedAt: createdAt
   };
+  memoryWaitlist.push(entry);
+  return { ok: true, duplicate: false, entry };
+}
+async function listWaitlist() {
+  const supabase = getSupabaseAdmin();
+  if (supabase) {
+    const entries = await orderedSupabaseWaitlist();
+    if (!entries) return [];
+    await Promise.all(entries.map((entry) => supabase.from("waitlist").update({ position: entry.position }).eq("id", entry.id)));
+    return entries;
+  }
+  return memoryWaitlist.map((entry, index) => ({ ...entry, position: index + 1 }));
+}
+function formatWaitlistResponse(result) {
+  return {
+    success: true,
+    message: result.duplicate ? "You\u2019re already on the PacMac Mobile early access list." : "You\u2019re on the PacMac Mobile early access list.",
+    position: result.entry.position,
+    email: result.entry.email,
+    status: result.entry.status
+  };
+}
+async function createLifelineLead(input) {
+  const fullName = (input.fullName || "").trim();
+  const email = (input.email || "").toLowerCase().trim();
+  const phone = (input.phone || "").trim();
+  const eligibilityStatus = (input.eligibilityStatus || "").trim();
+  const consent = Boolean(input.consent);
+  if (!fullName) return { ok: false, status: 400, error: "Name is required." };
+  if (!email || !isValidEmail(email)) return { ok: false, status: 400, error: "Please enter a valid email address." };
+  if (!phone) return { ok: false, status: 400, error: "Phone is required." };
+  if (!eligibilityStatus) return { ok: false, status: 400, error: "Eligibility status is required." };
+  if (!consent) return { ok: false, status: 400, error: "Consent is required before PacMac Mobile can contact you." };
+  const supabase = getSupabaseAdmin();
+  if (supabase) {
+    const { data, error } = await supabase.from("lifeline_leads").insert({
+      full_name: fullName,
+      email,
+      phone,
+      eligibility_status: eligibilityStatus,
+      consent,
+      source: "lifeline_page"
+    }).select("id,full_name,email,phone,eligibility_status,consent,source,created_at").single();
+    if (error) return { ok: false, status: 500, error: error.message };
+    return { ok: true, lead: lifelineLeadFromRow(data) };
+  }
+  const createdAt = (/* @__PURE__ */ new Date()).toISOString();
+  const lead = {
+    id: `lifeline_${crypto2.randomUUID()}`,
+    fullName,
+    email,
+    phone,
+    eligibilityStatus,
+    consent,
+    source: "lifeline_page",
+    createdAt
+  };
+  memoryLifelineLeads.unshift(lead);
+  return { ok: true, lead };
+}
+async function listLifelineLeads() {
+  const supabase = getSupabaseAdmin();
+  if (supabase) {
+    const { data, error } = await supabase.from("lifeline_leads").select("id,full_name,email,phone,eligibility_status,consent,source,created_at").order("created_at", { ascending: false });
+    if (error) throw error;
+    return (data || []).map(lifelineLeadFromRow);
+  }
+  return [...memoryLifelineLeads];
 }
 async function login(email, password) {
   const supabase = getSupabaseAdmin();
@@ -22498,6 +22603,225 @@ function getSeedSummary() {
   };
 }
 
+// server/deviceLookupService.ts
+var supabaseAdmin2;
+function getSupabaseAdmin2() {
+  if (supabaseAdmin2 !== void 0) return supabaseAdmin2;
+  const url = process.env.SUPABASE_URL || process.env.VITE_SUPABASE_URL;
+  const key = process.env.SUPABASE_SERVICE_ROLE_KEY;
+  const hasValidUrl = Boolean(url && /^https?:\/\//i.test(url));
+  supabaseAdmin2 = hasValidUrl && key ? createClient(url, key, { auth: { persistSession: false } }) : null;
+  return supabaseAdmin2;
+}
+var localTacDatabase = [
+  {
+    tac: "35304110",
+    brand: "Apple",
+    model: "iPhone 14",
+    device_type: "smartphone",
+    esim_capable: true,
+    five_g_capable: true,
+    source: "local_tac_database"
+  },
+  {
+    tac: "35693835",
+    brand: "Apple",
+    model: "iPhone 13",
+    device_type: "smartphone",
+    esim_capable: true,
+    five_g_capable: true,
+    source: "local_tac_database"
+  },
+  {
+    tac: "35925406",
+    brand: "Samsung",
+    model: "Galaxy S23",
+    device_type: "smartphone",
+    esim_capable: true,
+    five_g_capable: true,
+    source: "local_tac_database"
+  },
+  {
+    tac: "35672511",
+    brand: "Samsung",
+    model: "Galaxy S22",
+    device_type: "smartphone",
+    esim_capable: true,
+    five_g_capable: true,
+    source: "local_tac_database"
+  },
+  {
+    tac: "35824005",
+    brand: "Google",
+    model: "Pixel 7",
+    device_type: "smartphone",
+    esim_capable: true,
+    five_g_capable: true,
+    source: "local_tac_database"
+  },
+  {
+    tac: "35850012",
+    brand: "Google",
+    model: "Pixel 8",
+    device_type: "smartphone",
+    esim_capable: true,
+    five_g_capable: true,
+    source: "local_tac_database"
+  },
+  {
+    tac: "35682811",
+    brand: "Motorola",
+    model: "Moto G Power 5G",
+    device_type: "smartphone",
+    esim_capable: false,
+    five_g_capable: true,
+    source: "local_tac_database"
+  },
+  {
+    tac: "35766010",
+    brand: "OnePlus",
+    model: "OnePlus 11",
+    device_type: "smartphone",
+    esim_capable: true,
+    five_g_capable: true,
+    source: "local_tac_database"
+  }
+];
+var LocalTacLookupProvider = class {
+  async lookup(imei) {
+    const tac = DeviceLookupService.extract_tac(imei);
+    const supabase = getSupabaseAdmin2();
+    if (supabase) {
+      const { data, error } = await supabase.from("device_tac_database").select("tac,brand,model,device_type,esim_capable,five_g_capable,source").eq("tac", tac).maybeSingle();
+      if (!error && data) {
+        return {
+          tac: data.tac,
+          brand: data.brand,
+          model: data.model,
+          device_type: data.device_type || "smartphone",
+          esim_capable: data.esim_capable,
+          five_g_capable: data.five_g_capable,
+          source: data.source || "supabase_tac_database"
+        };
+      }
+    }
+    return localTacDatabase.find((record) => record.tac === tac) || null;
+  }
+};
+var DeviceLookupService = class _DeviceLookupService {
+  constructor(provider = new LocalTacLookupProvider()) {
+    this.provider = provider;
+  }
+  static validate_imei(imei) {
+    const clean = imei.replace(/\D/g, "");
+    if (!/^\d{15}$/.test(clean)) return false;
+    let sum = 0;
+    for (let i = 0; i < clean.length; i++) {
+      let digit = Number(clean[i]);
+      if (i % 2 === 1) {
+        digit *= 2;
+        if (digit > 9) digit -= 9;
+      }
+      sum += digit;
+    }
+    return sum % 10 === 0;
+  }
+  static extract_tac(imei) {
+    return imei.replace(/\D/g, "").slice(0, 8);
+  }
+  validate_imei(imei) {
+    return _DeviceLookupService.validate_imei(imei);
+  }
+  extract_tac(imei) {
+    return _DeviceLookupService.extract_tac(imei);
+  }
+  async lookup_device_by_tac(tac) {
+    return this.provider.lookup(`${tac}0000000`);
+  }
+  async check_byop_compatibility(imei) {
+    const clean = imei.replace(/\D/g, "");
+    if (!_DeviceLookupService.validate_imei(clean)) {
+      return {
+        imei_valid: false,
+        message: "Please enter a valid 15-digit IMEI."
+      };
+    }
+    const tac = _DeviceLookupService.extract_tac(clean);
+    const device = await this.provider.lookup(clean);
+    if (!device) {
+      await this.recordByopCheck(clean, tac, null, "needs_manual_review");
+      return {
+        imei_valid: true,
+        tac,
+        compatibility_status: "needs_manual_review",
+        source: "local_tac_database",
+        message: "We couldn\u2019t automatically identify this device, but your IMEI appears valid."
+      };
+    }
+    await this.recordByopCheck(clean, tac, device, "likely_compatible");
+    return {
+      imei_valid: true,
+      tac,
+      brand: device.brand,
+      model: device.model,
+      device_type: device.device_type,
+      esim_capable: device.esim_capable,
+      five_g_capable: device.five_g_capable,
+      compatibility_status: "likely_compatible",
+      source: device.source,
+      message: "We found your device."
+    };
+  }
+  async recordByopCheck(imei, tac, device, compatibilityStatus) {
+    const supabase = getSupabaseAdmin2();
+    if (!supabase) return;
+    await supabase.from("byop_checks").insert({
+      tac,
+      imei_last4: imei.slice(-4),
+      detected_brand: device?.brand || null,
+      detected_model: device?.model || null,
+      compatibility_status: compatibilityStatus,
+      manual_review_required: compatibilityStatus === "needs_manual_review"
+    }).then(({ error }) => {
+      if (error) {
+        console.warn("[BYOP] Unable to record TAC lookup check:", error.message);
+      }
+    });
+  }
+};
+var deviceLookupService = new DeviceLookupService();
+function formatByopApiResponse(result) {
+  if (!result.imei_valid) {
+    return {
+      success: false,
+      imei_valid: false,
+      message: result.message || "Please enter a valid 15-digit IMEI."
+    };
+  }
+  const device = result.brand && result.model ? {
+    brand: result.brand,
+    model: result.model,
+    device_type: result.device_type || "smartphone",
+    esim_capable: result.esim_capable,
+    five_g_capable: result.five_g_capable
+  } : null;
+  return {
+    success: true,
+    imei_valid: true,
+    tac: result.tac,
+    device,
+    compatibility_status: result.compatibility_status,
+    message: result.message
+  };
+}
+async function listByopChecks() {
+  const supabase = getSupabaseAdmin2();
+  if (!supabase) return [];
+  const { data, error } = await supabase.from("byop_checks").select("id,email,imei_last4,tac,detected_brand,detected_model,compatibility_status,manual_review_required,created_at").order("created_at", { ascending: false });
+  if (error) throw error;
+  return data || [];
+}
+
 // server.ts
 dotenv.config();
 var __filename = fileURLToPath(import.meta.url);
@@ -22611,10 +22935,50 @@ app.get("/api/admin/seed-summary", (req, res) => {
   if (user.role !== "admin") return res.status(403).json({ error: "Admin access required." });
   return res.status(200).json(getSeedSummary());
 });
+app.get("/api/admin/waitlist", async (req, res) => {
+  const user = requireSession(req, res);
+  if (!user) return;
+  if (user.role !== "admin") return res.status(403).json({ error: "Admin access required." });
+  const entries = await listWaitlist();
+  return res.status(200).json({ success: true, total: entries.length, entries });
+});
+app.get("/api/admin/byop-checks", async (req, res) => {
+  const user = requireSession(req, res);
+  if (!user) return;
+  if (user.role !== "admin") return res.status(403).json({ error: "Admin access required." });
+  const checks = await listByopChecks();
+  return res.status(200).json({ success: true, total: checks.length, checks });
+});
+app.get("/api/admin/lifeline-leads", async (req, res) => {
+  const user = requireSession(req, res);
+  if (!user) return;
+  if (user.role !== "admin") return res.status(403).json({ error: "Admin access required." });
+  const leads = await listLifelineLeads();
+  return res.status(200).json({ success: true, total: leads.length, leads });
+});
 app.post("/api/waitlist", async (req, res) => {
-  const result = await joinWaitlist({ name: req.body?.name, email: req.body?.email });
+  const result = await joinWaitlist({
+    fullName: req.body?.full_name || req.body?.fullName || req.body?.name,
+    phone: req.body?.phone,
+    email: req.body?.email
+  });
   if (!result.ok) return res.status(result.status).json({ error: result.error });
-  return res.status(201).json(result.entry);
+  return res.status(200).json(formatWaitlistResponse(result));
+});
+app.post("/api/lifeline/leads", async (req, res) => {
+  const result = await createLifelineLead({
+    fullName: req.body?.full_name || req.body?.fullName || req.body?.name,
+    email: req.body?.email,
+    phone: req.body?.phone,
+    eligibilityStatus: req.body?.eligibility_status || req.body?.eligibilityStatus,
+    consent: req.body?.consent
+  });
+  if (!result.ok) return res.status(result.status).json({ error: result.error });
+  return res.status(201).json({ success: true, lead: result.lead });
+});
+app.post("/api/byop/check-imei", async (req, res) => {
+  const result = await deviceLookupService.check_byop_compatibility(req.body?.imei || "");
+  return res.status(result.imei_valid ? 200 : 400).json(formatByopApiResponse(result));
 });
 var serverBlockedNumbers = /* @__PURE__ */ new Map();
 var serverFraudAlerts = [];

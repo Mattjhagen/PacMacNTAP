@@ -39,8 +39,7 @@ export default function ImeiInput({ value, onChange, placeholder = "Enter 15-dig
     const { clean, formatted } = formatImei(value);
     setDisplayValue(formatted);
     
-    // Validate format (must be 15 digits)
-    const valid = clean.length === 15;
+    const valid = compatibilityService.validateImei(clean);
     setIsValidFormat(valid);
   }, [value]);
 
@@ -48,8 +47,7 @@ export default function ImeiInput({ value, onChange, placeholder = "Enter 15-dig
     const rawVal = e.target.value;
     const { clean } = formatImei(rawVal);
     
-    // Validate format
-    const valid = clean.length === 15;
+    const valid = compatibilityService.validateImei(clean);
     setIsValidFormat(valid);
     onChange(clean, valid);
   };
@@ -85,7 +83,7 @@ export default function ImeiInput({ value, onChange, placeholder = "Enter 15-dig
       </div>
       <div className="flex justify-between items-center px-1">
         <span className="text-[9px] text-brand-gray-500 font-mono">
-          Dial <strong className="text-white font-normal">*#06#</strong> on your device to display IMEI.
+          Dial <strong className="text-white font-normal">*#06#</strong> on your device to display IMEI. We validate the 15-digit IMEI before lookup.
         </span>
       </div>
     </div>

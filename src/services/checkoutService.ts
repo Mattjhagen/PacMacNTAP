@@ -11,7 +11,6 @@ export const checkoutService = {
     chosenDevice: string
   ): Promise<{ success: boolean; error: string | null }> {
     const emailLower = email.toLowerCase();
-    const cleanImei = sessionStorage.getItem('pacmac_checkout_imei') || '';
     const onboardingResultRaw = sessionStorage.getItem('pacmac_onboarding_device_result');
     let onboardingResult: any = null;
 
@@ -49,7 +48,8 @@ export const checkoutService = {
               .from('devices')
               .insert({
                 profile_id: user.id,
-                imei: onboardingResult.imei,
+                tac: onboardingResult.tac,
+                imei_last4: onboardingResult.imei_last4,
                 brand: onboardingResult.brand,
                 model: onboardingResult.model,
                 compatibility_status: onboardingResult.compatibility_status,
@@ -100,7 +100,8 @@ export const checkoutService = {
             const devs = JSON.parse(rawDevs);
             devs.push({
               id: `mock-dev-${Date.now()}`,
-              imei: onboardingResult.imei,
+              tac: onboardingResult.tac,
+              imei_last4: onboardingResult.imei_last4,
               brand: onboardingResult.brand,
               model: onboardingResult.model,
               compatibility_status: onboardingResult.compatibility_status,

@@ -1,4 +1,5 @@
 import assert from 'node:assert/strict';
+import { readFileSync } from 'node:fs';
 import test from 'node:test';
 import {
   billingEstimateFor,
@@ -7,8 +8,11 @@ import {
   getCustomerDashboard,
   getSeedSummary,
   getSessionUser,
+  formatWaitlistResponse,
   joinWaitlist,
+  listWaitlist,
   login,
+  resetMemoryWaitlistForTests,
   sessionCookie,
   setPackieProtection,
   signup,
@@ -118,12 +122,56 @@ test('signup creates customer accounts by default', async () => {
   }
 });
 
-test('waitlist signup returns a queue number', async () => {
-  const result = await joinWaitlist({ email: `wait-${Date.now()}@pacmacmobile.com`, name: 'Wait List' });
+test('valid email inserts into waitlist with position based on created order', async () => {
+  resetMemoryWaitlistForTests();
+  const first = await joinWaitlist({ email: 'first@example.com', fullName: 'First User' });
+  const second = await joinWaitlist({ email: 'second@example.com', fullName: 'Second User' });
 
+  assert.equal(first.ok, true);
+  assert.equal(second.ok, true);
+  assert.equal(first.ok && first.entry.position, 1);
+  assert.equal(second.ok && second.entry.position, 2);
+  assert.equal(second.ok && second.entry.status, 'pending');
+});
+
+test('duplicate waitlist email does not create duplicate row and returns existing position', async () => {
+  resetMemoryWaitlistForTests();
+  const first = await joinWaitlist({ email: 'duplicate@example.com', fullName: 'Original' });
+  const duplicate = await joinWaitlist({ email: 'DUPLICATE@example.com', fullName: 'Duplicate' });
+  const entries = await listWaitlist();
+
+  assert.equal(first.ok, true);
+  assert.equal(duplicate.ok, true);
+  assert.equal(entries.length, 1);
+  assert.equal(duplicate.ok && duplicate.duplicate, true);
+  assert.equal(duplicate.ok && duplicate.entry.position, 1);
+});
+
+test('invalid waitlist email is rejected', async () => {
+  resetMemoryWaitlistForTests();
+  const result = await joinWaitlist({ email: 'not-an-email', fullName: 'Bad Email' });
+
+  assert.equal(result.ok, false);
+  assert.equal(result.ok === false && result.status, 400);
+});
+
+test('waitlist API formatter never returns fake random number fields', async () => {
+  resetMemoryWaitlistForTests();
+  const result = await joinWaitlist({ email: 'format@example.com', fullName: 'Format User' });
   assert.equal(result.ok, true);
-  if (result.ok) {
-    assert.ok(result.entry.waitlistNumber > 0);
-    assert.equal(result.entry.status, 'active');
-  }
+  if (!result.ok) return;
+
+  const response = formatWaitlistResponse(result);
+  assert.equal(response.position, 1);
+  assert.equal(Object.prototype.hasOwnProperty.call(response, 'waitlistNumber'), false);
+  assert.equal(Object.prototype.hasOwnProperty.call(response, 'queueNumber'), false);
+});
+
+test('frontend waitlist uses API response position', () => {
+  const home = readFileSync(new URL('../src/pages/Home.tsx', import.meta.url), 'utf8');
+  const waitlist = readFileSync(new URL('../src/components/WaitlistSection.tsx', import.meta.url), 'utf8');
+
+  assert.match(home, /data\.position/);
+  assert.match(waitlist, /data\.position/);
+  assert.doesNotMatch(home + waitlist, /waitlistNumber|Math\.random|2000\+/);
 });

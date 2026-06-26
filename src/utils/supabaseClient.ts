@@ -157,11 +157,6 @@ class MockQueryBuilder {
       }
     }
     
-    if (this.tableName === 'waitlist') {
-      const raw = localStorage.getItem('pacmac_waitlist_signups') || '[]';
-      return { data: JSON.parse(raw), error: null };
-    }
-
     if (this.tableName === 'devices') {
       const raw = localStorage.getItem('pacmac_user_devices') || '[]';
       return { data: JSON.parse(raw), error: null };
@@ -171,18 +166,6 @@ class MockQueryBuilder {
   }
 
   insert(data: any) {
-    if (this.tableName === 'waitlist') {
-      const raw = localStorage.getItem('pacmac_waitlist_signups') || '[]';
-      const arr = JSON.parse(raw);
-      const payload = Array.isArray(data) ? data : [data];
-      const updated = [...payload, ...arr];
-      localStorage.setItem('pacmac_waitlist_signups', JSON.stringify(updated));
-      return {
-        then: (resolve: any) => resolve({ data: payload, error: null }),
-        catch: (reject: any) => reject(null)
-      };
-    }
-
     if (this.tableName === 'devices') {
       const raw = localStorage.getItem('pacmac_user_devices') || '[]';
       const arr = JSON.parse(raw);

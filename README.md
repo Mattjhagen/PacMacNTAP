@@ -30,6 +30,7 @@ Useful routes:
 - Admin console: `/#/admin`
 - Sign in: `/#/signin`
 - Sign up: `/#/signup`
+- Lifeline / NTAP helper: `/#/lifeline`
 
 Demo credentials:
 
@@ -61,10 +62,126 @@ When `SUPABASE_SERVICE_ROLE_KEY` is configured, the backend persists:
 - eSIM records in `sim_cards`
 - billing cycles in `billing_cycles`
 - waitlist signups in `waitlist`
+- BYOP TAC records in `device_tac_database`
+- BYOP lookup audit rows in `byop_checks`
+- Lifeline / NTAP contact requests in `lifeline_leads`
 - customer blocked numbers in `blocked_numbers`
 - PackieAI protection settings in `customer_profiles`
 
 If Supabase is not configured, the app keeps using the in-memory demo seed data.
+
+### Waitlist Table
+
+Run `supabase/migrations/20260626143000_update_waitlist_real_positions.sql` or apply `supabase/schema.sql`.
+
+The live `waitlist` table uses:
+
+- `id uuid primary key default gen_random_uuid()`
+- `email text unique not null`
+- `full_name text`
+- `phone text`
+- `source text default 'pacmacmobile.com'`
+- `status text default 'pending'`
+- `position integer`
+- `referral_code text unique`
+- `referred_by uuid`
+- `created_at timestamptz default now()`
+- `updated_at timestamptz default now()`
+
+Waitlist inserts go through `POST /api/waitlist` using the server-side service role key. The browser never receives the service role key. Public reads of the full waitlist remain blocked; admin visibility goes through the protected admin endpoint.
+
+Test locally:
+
+```bash
+curl -X POST http://localhost:3000/api/waitlist \
+  -H "Content-Type: application/json" \
+  -d '{"email":"new@example.com","full_name":"New User"}'
+```
+
+Expected response:
+
+```json
+{
+  "success": true,
+  "message": "You’re on the PacMac Mobile early access list.",
+  "position": 1,
+  "email": "new@example.com",
+  "status": "pending"
+}
+```
+
+Submitting the same email again returns success with the same position and does not create a duplicate row.
+
+### BYOP TAC Lookup
+
+Run `supabase/migrations/20260626160000_add_byop_tac_lookup.sql` or apply `supabase/schema.sql`.
+
+BYOP device checks go through `POST /api/byop/check-imei`. The frontend sends the IMEI to the backend, the backend validates the 15-digit Luhn checksum, extracts the first 8 digits as the TAC, looks up `device_tac_database`, and records only `tac` plus `imei_last4` in `byop_checks`. Full IMEIs are not stored by the BYOP audit flow.
+
+The TAC database table uses:
+
+- `id uuid primary key default uuid_generate_v4()`
+- `tac text unique not null`
+- `brand text not null`
+- `model text not null`
+- `device_type text default 'smartphone'`
+- `esim_capable boolean`
+- `five_g_capable boolean`
+- `source text default 'local_seed'`
+- `created_at timestamptz default now()`
+- `updated_at timestamptz default now()`
+
+Test locally with a seeded TAC:
+
+```bash
+curl -X POST http://localhost:3000/api/byop/check-imei \
+  -H "Content-Type: application/json" \
+  -d '{"imei":"353041101234562"}'
+```
+
+Expected response:
+
+```json
+{
+  "success": true,
+  "imei_valid": true,
+  "tac": "35304110",
+  "device": {
+    "brand": "Apple",
+    "model": "iPhone 14",
+    "device_type": "smartphone",
+    "esim_capable": true,
+    "five_g_capable": true
+  },
+  "compatibility_status": "likely_compatible",
+  "message": "We found your device."
+}
+```
+
+Unknown but valid TACs return `needs_manual_review` with `device: null`. Carrier compatibility is not promised from IMEI validation alone; final activation still requires PacMac MVNO/carrier rules. Admins can review lookup rows under `/#/admin` → `BYOP Checks`.
+
+### Nebraska Lifeline / NTAP Helper
+
+Run `supabase/migrations/20260626170000_add_lifeline_leads.sql` or apply `supabase/schema.sql`.
+
+The Lifeline helper lives at `/#/lifeline`. It explains possible Nebraska NTAP/Lifeline eligibility, reminds users that only one Lifeline benefit is allowed per household, and sends users to the official National Verifier:
+
+- National Verifier / GetInternet.gov: `https://www.getinternet.gov/apply?id=nv_home&ln=RW5nbGlzaA%3D%3D`
+- Nebraska PSC NTAP info: `https://psc.nebraska.gov/nebraska-telephone-assistance-programlifeline`
+
+PacMac Mobile does not determine Lifeline/NTAP eligibility and is not a government agency. The app must use careful wording such as “may qualify,” “help guide,” and “verify eligibility through the official National Verifier.”
+
+Optional follow-up requests go through `POST /api/lifeline/leads` and store safe contact info only:
+
+- `full_name`
+- `email`
+- `phone`
+- `eligibility_status`
+- `consent`
+- `source`
+- `created_at`
+
+Do not collect or store Social Security numbers, benefit cards, documents, uploads, or sensitive eligibility proof. Admins can review contact requests under `/#/admin` → `Lifeline / NTAP`.
 
 ## Authentication
 
@@ -77,6 +194,11 @@ Auth routes:
 - `POST /api/auth/signup`
 - `GET /api/auth/me`
 - `POST /api/waitlist`
+- `GET /api/admin/waitlist`
+- `POST /api/byop/check-imei`
+- `GET /api/admin/byop-checks`
+- `POST /api/lifeline/leads`
+- `GET /api/admin/lifeline-leads`
 
 Role behavior:
 

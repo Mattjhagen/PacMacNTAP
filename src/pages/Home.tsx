@@ -7,7 +7,8 @@ export default function Home() {
   const [waitlistEmail, setWaitlistEmail] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [submitStatus, setSubmitStatus] = useState<'idle' | 'success'>('idle');
-  const [waitlistNum, setWaitlistNum] = useState(0);
+  const [waitlistPosition, setWaitlistPosition] = useState<number | null>(null);
+  const [waitlistMessage, setWaitlistMessage] = useState('');
   const [waitlistError, setWaitlistError] = useState('');
 
   const handleWaitlistSubmit = async (e: React.FormEvent) => {
@@ -22,13 +23,14 @@ export default function Home() {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          name: waitlistEmail.split('@')[0],
+          full_name: waitlistEmail.split('@')[0],
           email: waitlistEmail
         })
       });
       const data = await response.json();
       if (!response.ok) throw new Error(data.error || 'Unable to join waitlist.');
-      setWaitlistNum(data.waitlistNumber);
+      setWaitlistPosition(data.position);
+      setWaitlistMessage(data.message);
       setSubmitStatus('success');
       setWaitlistEmail('');
     } catch (err: any) {
@@ -123,6 +125,30 @@ export default function Home() {
           >
             Activation takes about 3 minutes via eSIM.
           </motion.p>
+        </motion.div>
+
+        <motion.div
+          initial={{ opacity: 0, y: 16 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          viewport={{ once: true }}
+          className="mt-20 md:mt-28 border border-emerald-300/15 bg-emerald-300/5 rounded-xl p-6 sm:p-8 flex flex-col md:flex-row md:items-center justify-between gap-5"
+        >
+          <div className="max-w-2xl">
+            <span className="text-[10px] font-mono uppercase tracking-widest text-emerald-200">Nebraska Lifeline / NTAP</span>
+            <h2 className="font-display text-2xl sm:text-3xl font-semibold text-white mt-2">
+              Discounted phone service may be available.
+            </h2>
+            <p className="text-sm text-brand-gray-300 leading-relaxed mt-2">
+              Eligible Nebraska residents may qualify for discounted phone service through Lifeline/NTAP. PacMac can help you get started, then the official National Verifier checks eligibility.
+            </p>
+          </div>
+          <Link
+            to="/lifeline"
+            className="h-11 px-5 rounded-lg bg-white text-black hover:bg-brand-gray-200 text-sm font-semibold flex items-center justify-center gap-2 shrink-0"
+          >
+            Learn About Lifeline / NTAP
+            <ArrowRight className="w-4 h-4" />
+          </Link>
         </motion.div>
 
         {/* Feature Cards Grid */}
@@ -244,7 +270,10 @@ export default function Home() {
             <div className="p-6 rounded-lg bg-white/5 border border-white/10 max-w-md mx-auto space-y-2">
               <span className="text-sm font-semibold text-white block">You're on the list.</span>
               <p className="text-xs text-brand-gray-400 font-light">
-                Your queue number is <strong className="text-white">#{waitlistNum}</strong>. We'll dispatch your private invitation link via email as slots open.
+                {waitlistMessage || "Nice — you're on the PacMac Mobile early access list."}
+                {waitlistPosition ? (
+                  <> Your spot is <strong className="text-white">#{waitlistPosition}</strong>.</>
+                ) : null}
               </p>
             </div>
           ) : (

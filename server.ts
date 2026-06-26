@@ -9,13 +9,22 @@ import {
   getCustomerDashboard,
   getSeedSummary,
   getSessionUser,
+  createLifelineLead,
+  formatWaitlistResponse,
   joinWaitlist,
+  listLifelineLeads,
+  listWaitlist,
   login,
   sessionCookie,
   setPackieProtection,
   signup,
   unblockNumber
 } from './server/pacmacBackend';
+import {
+  deviceLookupService,
+  formatByopApiResponse,
+  listByopChecks
+} from './server/deviceLookupService';
 
 // Load environment variables
 dotenv.config();
@@ -149,10 +158,55 @@ app.get('/api/admin/seed-summary', (req, res) => {
   return res.status(200).json(getSeedSummary());
 });
 
+app.get('/api/admin/waitlist', async (req, res) => {
+  const user = requireSession(req, res);
+  if (!user) return;
+  if (user.role !== 'admin') return res.status(403).json({ error: 'Admin access required.' });
+  const entries = await listWaitlist();
+  return res.status(200).json({ success: true, total: entries.length, entries });
+});
+
+app.get('/api/admin/byop-checks', async (req, res) => {
+  const user = requireSession(req, res);
+  if (!user) return;
+  if (user.role !== 'admin') return res.status(403).json({ error: 'Admin access required.' });
+  const checks = await listByopChecks();
+  return res.status(200).json({ success: true, total: checks.length, checks });
+});
+
+app.get('/api/admin/lifeline-leads', async (req, res) => {
+  const user = requireSession(req, res);
+  if (!user) return;
+  if (user.role !== 'admin') return res.status(403).json({ error: 'Admin access required.' });
+  const leads = await listLifelineLeads();
+  return res.status(200).json({ success: true, total: leads.length, leads });
+});
+
 app.post('/api/waitlist', async (req, res) => {
-  const result = await joinWaitlist({ name: req.body?.name, email: req.body?.email });
+  const result = await joinWaitlist({
+    fullName: req.body?.full_name || req.body?.fullName || req.body?.name,
+    phone: req.body?.phone,
+    email: req.body?.email
+  });
   if (!result.ok) return res.status(result.status).json({ error: result.error });
-  return res.status(201).json(result.entry);
+  return res.status(200).json(formatWaitlistResponse(result));
+});
+
+app.post('/api/lifeline/leads', async (req, res) => {
+  const result = await createLifelineLead({
+    fullName: req.body?.full_name || req.body?.fullName || req.body?.name,
+    email: req.body?.email,
+    phone: req.body?.phone,
+    eligibilityStatus: req.body?.eligibility_status || req.body?.eligibilityStatus,
+    consent: req.body?.consent
+  });
+  if (!result.ok) return res.status(result.status).json({ error: result.error });
+  return res.status(201).json({ success: true, lead: result.lead });
+});
+
+app.post('/api/byop/check-imei', async (req, res) => {
+  const result = await deviceLookupService.check_byop_compatibility(req.body?.imei || '');
+  return res.status(result.imei_valid ? 200 : 400).json(formatByopApiResponse(result));
 });
 
 type ServerRiskLevel = 'low' | 'medium' | 'high';

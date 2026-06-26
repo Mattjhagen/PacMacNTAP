@@ -7,7 +7,8 @@ export default function WaitlistSection() {
   const [email, setEmail] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isCompleted, setIsCompleted] = useState(false);
-  const [waitlistNumber, setWaitlistNumber] = useState<number | null>(null);
+  const [waitlistPosition, setWaitlistPosition] = useState<number | null>(null);
+  const [successMessage, setSuccessMessage] = useState('');
   const [submitError, setSubmitError] = useState('');
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -22,13 +23,14 @@ export default function WaitlistSection() {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          name: name.trim(),
+          full_name: name.trim(),
           email: email.trim()
         })
       });
       const data = await response.json();
       if (!response.ok) throw new Error(data.error || 'Unable to join waitlist.');
-      setWaitlistNumber(data.waitlistNumber);
+      setWaitlistPosition(data.position);
+      setSuccessMessage(data.message);
       setIsCompleted(true);
     } catch (error: any) {
       setSubmitError(error.message || 'Unable to join waitlist.');
@@ -145,15 +147,15 @@ export default function WaitlistSection() {
                     You’re on the list.
                   </h4>
                   <p className="text-sm text-brand-gray-400 max-w-xs mx-auto leading-relaxed mb-6 font-sans">
-                    Thanks for signing up, <span className="text-white font-medium">{name}</span>! We’ve reserved your spot and will let you know when it’s ready.
+                    {successMessage || "Nice — you're on the PacMac Mobile early access list."}
                   </p>
 
                   <div className="bg-white/5 border border-white/10 rounded-xl py-4.5 px-6 inline-block mb-6 relative">
                     <span className="font-mono text-[9px] text-brand-gray-500 block uppercase tracking-wider">
-                      Your Waitlist Spot
+                      Your Early Access Spot
                     </span>
                     <span className="font-display text-2xl font-bold text-white tracking-tight block mt-0.5">
-                      #{waitlistNumber}
+                      #{waitlistPosition}
                     </span>
                   </div>
 

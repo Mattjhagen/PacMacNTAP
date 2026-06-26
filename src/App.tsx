@@ -16,6 +16,7 @@ const ESIM = lazy(() => import('./pages/ESIM'));
 const AIBilling = lazy(() => import('./pages/AIBilling'));
 const PackieAI = lazy(() => import('./pages/PackieAI'));
 const Support = lazy(() => import('./pages/Support'));
+const Lifeline = lazy(() => import('./pages/Lifeline'));
 const SignIn = lazy(() => import('./pages/SignIn'));
 const SignUp = lazy(() => import('./pages/SignUp'));
 const Dashboard = lazy(() => import('./pages/Dashboard'));
@@ -72,6 +73,7 @@ export default function App() {
                 <Route path="/esim" element={<ESIM />} />
                 <Route path="/ai-billing" element={<AIBilling />} />
                 <Route path="/packieai" element={<PackieAI />} />
+                <Route path="/lifeline" element={<Lifeline />} />
                 <Route 
                   path="/support" 
                   element={
