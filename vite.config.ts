@@ -1,3 +1,4 @@
+import { connectedFleetResponse } from './server/hologramService';
 import tailwindcss from '@tailwindcss/vite';
 import react from '@vitejs/plugin-react';
 import path from 'path';
@@ -58,6 +59,12 @@ export default defineConfig(({ mode }) => {
                 catch { resolve({}); }
               });
             });
+
+            if (req.url === '/api/admin/connected/devices' && req.method === 'GET') {
+              res.setHeader('Cache-Control', 'no-store');
+              const result = await connectedFleetResponse(getSessionUser(req.headers.cookie), { ...env, ...process.env });
+              return sendJson(result.status, result.body);
+            }
 
             const currentUser = () => getSessionUser(req.headers.cookie);
 

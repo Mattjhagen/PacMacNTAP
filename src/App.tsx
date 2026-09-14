@@ -7,6 +7,9 @@ import CursorGlow from './components/CursorGlow';
 import ProtectedRoute from './components/ProtectedRoute';
 import { AuthProvider } from './context/AuthContext';
 
+const Connected = lazy(() => import('./pages/Connected'));
+const ConnectedFleet = lazy(() => import('./pages/ConnectedFleet'));
+
 // Page Views (Lazy Loaded)
 const Home = lazy(() => import('./pages/Home'));
 const Phones = lazy(() => import('./pages/Phones'));
@@ -67,6 +70,9 @@ export default function App() {
             <Suspense fallback={<PageSuspenseFallback />}>
               <Routes>
                 <Route path="/" element={<Home />} />
+                <Route path="/connected" element={<Connected />} />
+                <Route path="/connected/demo" element={<ConnectedFleet />} />
+                <Route path="/admin/connected" element={<ProtectedRoute role="admin"><ConnectedFleet admin /></ProtectedRoute>} />
                 <Route path="/phones" element={<Phones />} />
                 <Route path="/plans" element={<Plans />} />
                 <Route path="/byop" element={<BYOP />} />

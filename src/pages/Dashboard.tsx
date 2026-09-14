@@ -13,7 +13,7 @@ import {
   Smartphone,
   Wifi
 } from 'lucide-react';
-import { useNavigate } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 
 interface DashboardData {
@@ -167,6 +167,7 @@ export default function Dashboard() {
             </div>
             <h1 className="font-display text-3xl sm:text-4xl font-semibold mt-2">Welcome, {data.customer.name}</h1>
             <p className="text-sm text-brand-gray-300 mt-2">Smarter Wireless. Better Choices.</p>
+            <Link to="/connected" className="inline-block text-emerald-200 mt-3 text-sm">Connect your business devices →</Link>
           </div>
           <button onClick={logout} className="h-10 px-4 rounded border border-white/10 bg-white/5 hover:bg-white/10 text-xs font-mono">
             Logout
