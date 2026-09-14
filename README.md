@@ -22,7 +22,7 @@ cp .env.example .env.local
 npm run dev
 ```
 
-Open `http://localhost:3000`.
+Open `http://localhost:5173`.
 
 Useful routes:
 
@@ -93,7 +93,7 @@ Waitlist inserts go through `POST /api/waitlist` using the server-side service r
 Test locally:
 
 ```bash
-curl -X POST http://localhost:3000/api/waitlist \
+curl -X POST http://localhost:5173/api/waitlist \
   -H "Content-Type: application/json" \
   -d '{"email":"new@example.com","full_name":"New User"}'
 ```
@@ -134,7 +134,7 @@ The TAC database table uses:
 Test locally with a seeded TAC:
 
 ```bash
-curl -X POST http://localhost:3000/api/byop/check-imei \
+curl -X POST http://localhost:5173/api/byop/check-imei \
   -H "Content-Type: application/json" \
   -d '{"imei":"353041101234562"}'
 ```
