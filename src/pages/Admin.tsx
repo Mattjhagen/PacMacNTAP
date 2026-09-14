@@ -1,3 +1,4 @@
+import { Link } from 'react-router-dom';
 import React, { useEffect, useMemo, useState } from 'react';
 import {
   Activity,
@@ -300,6 +301,7 @@ export default function Admin() {
               <span className="text-[10px] font-mono uppercase tracking-widest">PacMac Mobile Internal</span>
             </div>
             <h1 className="font-display text-3xl sm:text-4xl font-semibold mt-2">PacMac Wireless OS</h1>
+            <Link to="/admin/connected" className="inline-block text-emerald-200 mt-3">PacMac Connected · Fleet overview →</Link>
             <p className="text-sm text-brand-gray-300 mt-2 max-w-2xl">
               Smarter Wireless. Better Choices. Manage usage billing, SIM lifecycle, mock carrier events, and PackieAI call protection without carrier partner branding.
             </p>

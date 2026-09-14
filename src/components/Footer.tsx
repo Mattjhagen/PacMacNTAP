@@ -40,6 +40,8 @@ export default function Footer() {
           </p>
         </div>
 
+        <Link to="/connected" className="inline-block py-6 text-sm text-emerald-200 hover:text-white">PacMac Connected · IoT & connected devices</Link>
+
         {/* Copyright, legal, domain details */}
         <div className="flex flex-col sm:flex-row items-center justify-between gap-6 pt-8 text-[11px] font-mono text-brand-gray-500">
           <div className="flex flex-wrap justify-center sm:justify-start gap-4 sm:gap-6">

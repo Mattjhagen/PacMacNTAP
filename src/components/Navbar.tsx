@@ -20,6 +20,7 @@ export default function Navbar() {
 
   const menuItems = [
     { label: 'Home', to: '/' },
+    { label: 'Connected', to: '/connected' },
     { label: 'Sign In', to: '/signin' },
     { label: 'Customer Dashboard', to: '/dashboard' },
     { label: 'Admin Dashboard', to: '/admin' },
@@ -51,7 +52,7 @@ export default function Navbar() {
           </Link>
 
           {/* Desktop Nav Items */}
-          <nav className="hidden md:flex items-center gap-8">
+          <nav className="hidden xl:flex items-center gap-8">
             {menuItems.map((item) => (
               <Link
                 key={item.label}
@@ -68,7 +69,7 @@ export default function Navbar() {
           </nav>
 
           {/* Action button */}
-          <div className="hidden md:flex items-center gap-4">
+          <div className="hidden xl:flex items-center gap-4">
             {loading ? (
               <div className="w-20 h-7 bg-neutral-900 border border-white/5 rounded animate-pulse" />
             ) : user ? (
@@ -102,7 +103,7 @@ export default function Navbar() {
           {/* Mobile menu toggle */}
           <button
             onClick={() => setIsOpen(!isOpen)}
-            className="md:hidden p-2 text-brand-gray-300 hover:text-white transition-colors cursor-pointer"
+            className="xl:hidden p-2 text-brand-gray-300 hover:text-white transition-colors cursor-pointer"
             aria-label="Toggle menu"
           >
             {isOpen ? <X className="w-6 h-6" /> : <Menu className="w-6 h-6" />}
@@ -118,7 +119,7 @@ export default function Navbar() {
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: -10 }}
             transition={{ duration: 0.15 }}
-            className="fixed inset-x-0 top-[72px] bottom-0 z-30 bg-black/95 backdrop-blur-md md:hidden flex flex-col p-6 space-y-6"
+            className="fixed inset-x-0 top-[72px] bottom-0 z-30 bg-black/95 backdrop-blur-md xl:hidden flex flex-col p-6 space-y-6"
           >
             <div className="flex flex-col space-y-4 pt-4">
               {menuItems.map((item) => (

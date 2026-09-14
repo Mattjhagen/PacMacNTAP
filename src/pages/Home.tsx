@@ -151,6 +151,13 @@ export default function Home() {
           </Link>
         </motion.div>
 
+        <section className="mt-12 border border-emerald-200/20 rounded-xl bg-emerald-200/5 p-8">
+          <p className="text-xs font-mono tracking-widest text-emerald-200 uppercase">Introducing PacMac Connected</p>
+          <h2 className="font-display text-3xl mt-3">A connection for more than your phone.</h2>
+          <p className="text-brand-gray-300 mt-3 max-w-2xl">Trackers, kiosks, payment terminals, and your next big idea. Explore our connected-device pilot powered by Hologram.</p>
+          <Link to="/connected" className="inline-flex items-center gap-2 mt-5 text-emerald-200">Explore PacMac Connected <ArrowRight size={16} /></Link>
+        </section>
+
         {/* Feature Cards Grid */}
         <motion.div
           variants={containerVariants}

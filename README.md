@@ -347,3 +347,62 @@ Current coverage focuses on:
 - Verify webhook signatures before processing production voice events.
 - Enforce role-based access control server-side before exposing real admin APIs.
 - Store audit logs immutably once a real database is connected.
+
+## PacMac Connected
+
+PacMac Connected is a separate IoT pilot offering powered by Hologram. Consumer wireless,
+Lifeline/NTAP, billing, and PackieAI flows retain their existing behavior.
+
+- `/#/connected`: public offering, eight device categories, pilot guidance, and support entry.
+- `/#/connected/demo`: public, fictional fleet with device filtering; works on GitHub Pages.
+- `/#/admin/connected`: protected, read-only inventory, linked from the admin dashboard.
+- `GET /api/admin/connected/devices`: server-authorized fleet endpoint, available in Vite dev and Express.
+
+### Architecture and configuration
+
+The existing `src/services/wirelessOsService.ts` consumer `CarrierAdapter` is synchronous
+and browser-based. It is unchanged. `server/hologramService.ts` introduces the asynchronous
+`ConnectedCarrierAdapter` boundary with demo and Hologram implementations; it is never
+imported by the browser. Shared display types and fictional fixtures live in `src/types/connected.ts`.
+
+Default `HOLOGRAM_MODE=demo` makes no provider requests, even if a key is present.
+For live, read-only inventory, set server environment variables:
+
+- `HOLOGRAM_MODE=live`
+- `HOLOGRAM_API_KEY`: a Hologram API key kept in server secrets
+- `HOLOGRAM_ORG_ID`: the approved organization ID
+- `HOLOGRAM_ADMIN_IDS`: comma-separated trusted backend administrator IDs
+
+Live access requires both the existing server session's admin role and the explicit ID allowlist.
+The seeded `usr_admin_seed` is always denied live access. Provision trusted accounts through
+an appropriate production auth integration before enabling this feature; the seed login is
+only for demos. Browser auth bypass does not authorize this API.
+
+Hologram uses Basic auth (`apikey:<API key>`) at `https://dashboard.hologram.io/api/1`.
+The adapter reads `GET /devices?orgid=...&limit=100&withlocation=false`, maps only device ID,
+name, and cellular profile states, and labels partial inventory when more pages exist.
+Requests have a 10-second timeout, reject redirects, and return sanitized errors. Live
+configuration/provider failures never silently substitute demo results. No credentials,
+SIM identifiers, locations, or raw provider responses are sent to the browser.
+
+This release intentionally exposes no activation, pause, provisioning, billing, or other
+charge-incurring operations. Future lifecycle operations belong behind this server boundary
+with device ownership checks, durable audit records, and provider-specific asynchronous
+operation tracking. Do not wire the consumer phone adapter to Hologram.
+
+References checked September 2026:
+[Authentication](https://docs.hologram.io/api/v1),
+[List devices and pagination](https://docs.hologram.io/api/1/devices/get), and
+[Lifecycle patterns](https://docs.hologram.io/guides/rest-api/beginners-guide-to-the-hologram-rest-api).
+
+### Running and hosting
+
+Run `npm ci`, then `npm run dev`. With the default environment, both fleet previews use demo data.
+Run `npm run lint`, `npm test`, and `npm run build` before publishing. For Express, build and
+run `node server.js`; existing production email/auth configuration requirements still apply.
+GitHub Pages serves only static assets: the public offering and public demo work there,
+but live fleet inventory needs the Express API on the same origin. The admin view explains
+when a static host has no API. No Hologram keys belong in GitHub Pages build variables.
+
+The main-branch workflow deploys to Pages automatically. Review the feature-branch diff and
+checks before merging. No live Hologram credentials or production API access were used in development.

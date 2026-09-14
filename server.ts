@@ -1,3 +1,4 @@
+import { connectedFleetResponse } from './server/hologramService';
 import express from 'express';
 import path from 'path';
 import dotenv from 'dotenv';
@@ -149,6 +150,12 @@ app.delete('/api/customer/blocked-numbers/:id', async (req, res) => {
   const result = await unblockNumber(user, req.params.id);
   if (!result.ok) return res.status(result.status).json({ error: result.error });
   return res.status(200).json({ ok: true });
+});
+
+app.get('/api/admin/connected/devices', async (req, res) => {
+  res.setHeader('Cache-Control', 'no-store');
+  const result = await connectedFleetResponse(getSessionUser(req.headers.cookie));
+  return res.status(result.status).json(result.body);
 });
 
 app.get('/api/admin/seed-summary', (req, res) => {

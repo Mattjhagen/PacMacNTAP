@@ -13053,6 +13053,72 @@ var require_main3 = __commonJS({
   }
 });
 
+// src/types/connected.ts
+var demoFleet = {
+  mode: "demo",
+  hasMore: false,
+  devices: [
+    { id: "demo-van", name: "Delivery van \xB7 OBD tracker", state: "LIVE" },
+    { id: "demo-pos", name: "Market stall \xB7 POS terminal", state: "LIVE" },
+    { id: "demo-building", name: "Building 02 \xB7 Sensor gateway", state: "PAUSED-USER" },
+    { id: "demo-pi", name: "Workshop \xB7 Raspberry Pi", state: "LIVE" }
+  ]
+};
+
+// server/hologramService.ts
+var DemoConnectedAdapter = class {
+  async listDevices() {
+    return structuredClone(demoFleet);
+  }
+};
+var HologramCarrierAdapter = class {
+  constructor(apiKey, orgId, request = fetch) {
+    this.apiKey = apiKey;
+    this.orgId = orgId;
+    this.request = request;
+    if (!apiKey.trim() || !/^[1-9]\d*$/.test(orgId)) throw new Error("Hologram configuration is incomplete.");
+  }
+  async listDevices() {
+    try {
+      const url = new URL("https://dashboard.hologram.io/api/1/devices");
+      url.search = new URLSearchParams({ orgid: this.orgId, limit: "100", withlocation: "false" }).toString();
+      const response = await this.request(url, {
+        headers: { Authorization: `Basic ${Buffer.from(`apikey:${this.apiKey}`).toString("base64")}`, Accept: "application/json" },
+        signal: AbortSignal.timeout(1e4),
+        redirect: "error"
+      });
+      if (!response.ok) throw new Error("Provider request failed");
+      const body = await response.json();
+      if (body.success !== true || !Array.isArray(body.data)) throw new Error("Invalid provider response");
+      const devices = body.data.map((device) => {
+        if (!Number.isSafeInteger(device.id) || device.id <= 0 || Number(device.orgid) !== Number(this.orgId)) throw new Error("Invalid device");
+        const states = device.links?.cellular?.map((link) => typeof link.state === "string" ? link.state : "UNKNOWN");
+        return { id: String(device.id), name: typeof device.name === "string" ? device.name : `Device ${device.id}`, state: states?.length ? states.join(" / ") : "UNKNOWN" };
+      });
+      return { mode: "live", devices, hasMore: body.continues === true };
+    } catch {
+      throw new Error("Hologram is unavailable. Please retry later.");
+    }
+  }
+};
+function connectedCarrier(env = process.env) {
+  if (!env.HOLOGRAM_MODE || env.HOLOGRAM_MODE === "demo") return new DemoConnectedAdapter();
+  if (env.HOLOGRAM_MODE !== "live") throw new Error("Invalid Hologram mode.");
+  return new HologramCarrierAdapter(env.HOLOGRAM_API_KEY || "", env.HOLOGRAM_ORG_ID || "");
+}
+async function connectedFleetResponse(user, env = process.env) {
+  if (!user) return { status: 401, body: { error: "Authentication required." } };
+  if (user.role !== "admin") return { status: 403, body: { error: "Admin access required." } };
+  if (env.HOLOGRAM_MODE === "live" && (user.id === "usr_admin_seed" || !env.HOLOGRAM_ADMIN_IDS?.split(",").map((id) => id.trim()).includes(user.id))) {
+    return { status: 403, body: { error: "Live fleet access has not been granted to this administrator." } };
+  }
+  try {
+    return { status: 200, body: await connectedCarrier(env).listDevices() };
+  } catch {
+    return { status: 503, body: { error: "Connected fleet unavailable. Check server configuration or retry later." } };
+  }
+}
+
 // server.ts
 import express from "express";
 import path from "path";
@@ -22928,6 +22994,11 @@ app.delete("/api/customer/blocked-numbers/:id", async (req, res) => {
   const result = await unblockNumber(user, req.params.id);
   if (!result.ok) return res.status(result.status).json({ error: result.error });
   return res.status(200).json({ ok: true });
+});
+app.get("/api/admin/connected/devices", async (req, res) => {
+  res.setHeader("Cache-Control", "no-store");
+  const result = await connectedFleetResponse(getSessionUser(req.headers.cookie));
+  return res.status(result.status).json(result.body);
 });
 app.get("/api/admin/seed-summary", (req, res) => {
   const user = requireSession(req, res);
