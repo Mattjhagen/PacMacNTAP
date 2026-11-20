@@ -20,6 +20,7 @@ export default function Navbar() {
 
   const menuItems = [
     { label: 'Home', to: '/' },
+    { label: 'Wireless Demo', to: '/wireless-demo' },
     { label: 'Connected', to: '/connected' },
     { label: 'Sign In', to: '/signin' },
     { label: 'Customer Dashboard', to: '/dashboard' },

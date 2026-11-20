@@ -7,6 +7,7 @@ import CursorGlow from './components/CursorGlow';
 import ProtectedRoute from './components/ProtectedRoute';
 import { AuthProvider } from './context/AuthContext';
 
+const WirelessDemo = lazy(() => import('./pages/WirelessDemo'));
 const Connected = lazy(() => import('./pages/Connected'));
 const ConnectedFleet = lazy(() => import('./pages/ConnectedFleet'));
 
@@ -70,6 +71,8 @@ export default function App() {
             <Suspense fallback={<PageSuspenseFallback />}>
               <Routes>
                 <Route path="/" element={<Home />} />
+                <Route path="/wireless-demo" element={<WirelessDemo />} />
+                <Route path="/wireless-demo/admin" element={<WirelessDemo admin />} />
                 <Route path="/connected" element={<Connected />} />
                 <Route path="/connected/demo" element={<ConnectedFleet />} />
                 <Route path="/admin/connected" element={<ProtectedRoute role="admin"><ConnectedFleet admin /></ProtectedRoute>} />
